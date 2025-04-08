@@ -26,6 +26,5 @@ def visualize_data(data):
 			mask = class_column == label
 			plt.hist(data.iloc[:, i][mask], alpha=0.5, color=color, label=label, bins=20)
 
-	plt.legend()
 	plt.tight_layout(rect=[0, 0.03, 1, 0.95])
 	plt.show()
