@@ -27,7 +27,7 @@ def main():
 	except FileNotFoundError:
 		print(f"Error: The file {args.dataset_path} was not found.")
 		return
-	except pd.errors:
+	except pd.errors.ParserError:
 		print(f"Error: The file {args.dataset_path} is not a valid CSV.")
 		return
 	except Exception as e:
