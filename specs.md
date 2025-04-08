@@ -170,7 +170,6 @@ mlp-project/
 │
 ├── src/
 │   ├── data_tools/
-│   │   ├── __init__.py
 │   │   ├── split_dataset.py
 │   │   └── visualizer.py
 │   │
