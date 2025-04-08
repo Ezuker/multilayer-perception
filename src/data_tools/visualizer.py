@@ -20,7 +20,7 @@ def visualize_data(data):
 	plt.suptitle('Distribution of the Features', fontsize=16, y=0.98)
 
 	graph_size = int((len(data.columns) - 2) ** 0.5) + 1
-	for i in range(2, len(data.columns) - 1):
+	for i in range(2, len(data.columns)):
 		plt.subplot(graph_size - 1, graph_size, i - 1)
 		for label, color in zip(['B', 'M'], ['blue', 'red']):
 			mask = class_column == label
