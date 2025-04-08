@@ -1,5 +1,6 @@
 import argparse
 import pandas as pd
+from visualizer import visualize_data
 
 
 def main():
@@ -23,7 +24,10 @@ def main():
 	# Load the dataset
 	try:
 		data = pd.read_csv(args.dataset_path)
-		print(data)
+		if data.empty:
+			print("Error: The dataset is empty.")
+			return
+		visualize_data(data)
 	except FileNotFoundError:
 		print(f"Error: The file {args.dataset_path} was not found.")
 		return
@@ -32,9 +36,6 @@ def main():
 		return
 	except Exception as e:
 		print(f"An unexpected error occurred: {e}")
-		return
-	if data.empty:
-		print("Error: The dataset is empty.")
 		return
 
 
