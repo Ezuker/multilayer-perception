@@ -14,7 +14,7 @@ def visualize_data(data):
 		print("Error: Data must have at least two columns")
 		return
 
-	class_column = data.iloc[:, 1]
+	class_column = data[1]
 
 	plt.figure(figsize=(15, 10))
 	plt.suptitle('Distribution of the Features', fontsize=16, y=0.98)
@@ -24,7 +24,7 @@ def visualize_data(data):
 		plt.subplot(graph_size - 1, graph_size, i - 1)
 		for label, color in zip(['B', 'M'], ['blue', 'red']):
 			mask = class_column == label
-			plt.hist(data.iloc[:, i][mask], alpha=0.5, color=color, label=label, bins=20)
+			plt.hist(data[i][mask], alpha=0.5, color=color, label=label, bins=20)
 
 	plt.tight_layout(rect=[0, 0.03, 1, 0.95])
 	plt.show()
