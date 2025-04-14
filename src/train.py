@@ -15,8 +15,10 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Multilayer Perceptron Neural Network')
     parser.add_argument('--config', type=str, default='config/network.json',
                         help='Path to network configuration file')
-    parser.add_argument('--data', type=str, required=True,
-                        help='Path to training data file')
+    parser.add_argument('--data-train', type=str, required=True,
+                        help='Path to training train data file')
+    parser.add_argument('--data-validation', type=str, required=True,
+                        help='Path to training validation data file')
     parser.add_argument('--save', type=str, default='models/model.pkl',
                         help='Path to save trained model')
     parser.add_argument('--verbose', action='store_true',
@@ -43,10 +45,14 @@ def main():
         
         network = Network(layers_config)
         print("Network initialized successfully!")
-        print(f"Network architecture: {network}")
+        if args.verbose:
+            print(f"Network architecture: {network}")
+            print(f"Ready to train using data from: {args.data}")
+            print(f"Model will be saved to: {args.save}")
         
-        print(f"Ready to train using data from: {args.data}")
-        print(f"Model will be saved to: {args.save}")
+        
+
+
         
     except Exception as e:
         print(f"Error: {e}")
