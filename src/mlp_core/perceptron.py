@@ -53,8 +53,7 @@ class Perceptron:
         elif name == 'tanh':
             return lambda x: np.tanh(x)
         elif name == 'softmax':
-            return lambda x: np.exp(x) / np.sum(np.exp(x), axis=0)
-        else:
+            return lambda x: np.exp(x - np.max(x)) / np.sum(np.exp(x - np.max(x)), axis=0)
             raise ValueError(f"Unknown activation function: {name}")
     
     def _get_activation_derivative(self, name: str) -> Callable:
