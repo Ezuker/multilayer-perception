@@ -44,7 +44,7 @@ def main():
                       f"{layer['activation']} activation")
             print(f"Training parameters: {training_config}")
         
-        network = Network(layers_config)
+        network = Network(layers_config, training_config)
         print("Network initialized successfully!")
         if args.verbose:
             print(f"Network architecture: {network}")
@@ -54,6 +54,7 @@ def main():
         x_train, y_train, x_val, y_val, x_mean, x_std = ProcessData.get_data(args.data_train, args.data_validation)
         if args.verbose:
             print(x_train, y_train)
+        history = network.fit(x_train, y_train)
 
         
     except Exception as e:

@@ -71,3 +71,18 @@ class Perceptron:
             return softmax_derivative
         else:
             raise ValueError(f"Unknown activation function: {name}")
+        
+    def forward(self, inputs: np.ndarray) -> np.ndarray:
+        """
+        Compute the output of the perceptron given the inputs.
+        
+        Args:
+            inputs: Input data
+        
+        Returns:
+            Output after applying activation function
+        """
+        self.last_input = inputs
+        z = np.dot(inputs, self.weights) + self.bias
+        self.last_output = self.activation_fn(z)
+        return self.last_output

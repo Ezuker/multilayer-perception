@@ -19,7 +19,9 @@ class Layer:
         return f"Layer with {len(self.perceptrons)} perceptrons, {self.config}"
         
     def forward(self, inputs):
-        pass
+        """Compute the output of the layer given the inputs."""
+        outputs = [p.forward(inputs) for p in self.perceptrons]
+        return outputs
         
     def backward(self, gradients, learning_rate):
         pass
