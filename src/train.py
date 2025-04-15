@@ -9,6 +9,7 @@ import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from mlp_core.parser import ConfigParser
 from mlp_core.network import Network
+from data_tools.process_data_train import ProcessData
 
 def parse_args():
     """Parse command-line arguments."""
@@ -47,11 +48,12 @@ def main():
         print("Network initialized successfully!")
         if args.verbose:
             print(f"Network architecture: {network}")
-            print(f"Ready to train using data from: {args.data}")
+            print(f"Ready to train using data from: {args.data_train}")
             print(f"Model will be saved to: {args.save}")
         
-        
-
+        x_train, y_train, x_val, y_val, x_mean, x_std = ProcessData.get_data(args.data_train, args.data_validation)
+        if args.verbose:
+            print(x_train, y_train)
 
         
     except Exception as e:
