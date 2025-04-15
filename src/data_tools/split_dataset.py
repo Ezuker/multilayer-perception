@@ -22,6 +22,11 @@ def main():
 		default=0.8,
 		help="Proportion of the dataset to include in the train split.",
 	)
+	parser.add_argument(
+		"--visualize",
+		action="store_true",
+		help="Visualize the dataset before splitting.",
+	)
 	args = parser.parse_args()
 
 	print(f"Dataset path: {args.dataset_path}")
@@ -31,7 +36,8 @@ def main():
 		if data.empty:
 			print("Error: The dataset is empty.")
 			return
-		# visualize_data(data)
+		if args.visualize:
+			visualize_data(data)
 		data = data.sample(frac=1.0, random_state=42)
 		train_data = data.sample(frac=args.train_ratio)
 		test_data = data.drop(train_data.index)
