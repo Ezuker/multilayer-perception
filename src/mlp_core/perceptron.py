@@ -85,4 +85,5 @@ class Perceptron:
         self.last_input = inputs
         z = np.dot(inputs, self.weights) + self.bias
         self.last_output = self.activation_fn(z)
+        print(self.last_output.shape)
         return self.last_output
