@@ -37,7 +37,7 @@ class Layer:
         Compute the output of the layer given the inputs.
         """
         logits = np.array([p.forward(inputs) for p in self.perceptrons]).T
-        print("Logits shape:", logits.shape)
+        # print("Logits shape:", logits.shape)
         if self.config['activation'] == 'sigmoid':
             outputs = 1 / (1 + np.exp(-logits))
         elif self.config['activation'] == 'relu':
@@ -52,30 +52,58 @@ class Layer:
         
         for i, p in enumerate(self.perceptrons):
             p.last_activation = outputs[:, i:i+1]
-        print("Layer forward pass output shape:", outputs.shape)
+        # print("Layer forward pass output shape:", outputs.shape)
         return outputs
 
     def backward(self, gradients, learning_rate):
         """
         Perform the backward pass through the layer.
-        
-        Args:
-            gradients: Gradient of the loss with respect to the layer's outputs
-            learning_rate: Learning rate for weight updates
-            
-        Returns:
-            Gradient of the loss with respect to the layer's inputs (for previous layer)
         """
         batch_size = gradients.shape[0]
+        
+        # Reshape gradients if they're 1D
+        if len(gradients.shape) == 1:
+            gradients = gradients.reshape(-1, 1)
+        
         input_gradients = np.zeros((batch_size, self.config['input_size']))
         
-        # For each perceptron in the layer
+        # Special case for softmax (when used with cross-entropy loss)
+        if self.config['activation'] == 'softmax':
+            activation_gradients = gradients
+        else:
+            # For other activations, compute gradients through activation function
+            if len(gradients.shape) == 1 or gradients.shape[1] == 1:
+                # Handle 1D gradients case
+                activation_gradients = np.zeros((batch_size, len(self.perceptrons)))
+                for i, p in enumerate(self.perceptrons):
+                    if self.config['activation'] == 'sigmoid':
+                        activation_gradients[:, i] = gradients.flatten() * p.last_activation.flatten() * (1 - p.last_activation.flatten())
+                    elif self.config['activation'] == 'relu':
+                        activation_gradients[:, i] = gradients.flatten() * (p.last_output.flatten() > 0)
+                    elif self.config['activation'] == 'tanh':
+                        activation_gradients[:, i] = gradients.flatten() * (1 - p.last_activation.flatten()**2)
+            else:
+                # Original code for 2D gradients
+                activation_gradients = np.zeros_like(gradients)
+                for i, p in enumerate(self.perceptrons):
+                    if self.config['activation'] == 'sigmoid':
+                        activation_gradients[:, i:i+1] = gradients[:, i:i+1] * p.last_activation * (1 - p.last_activation)
+                    elif self.config['activation'] == 'relu':
+                        activation_gradients[:, i:i+1] = gradients[:, i:i+1] * (p.last_output > 0)
+                    elif self.config['activation'] == 'tanh':
+                        activation_gradients[:, i:i+1] = gradients[:, i:i+1] * (1 - p.last_activation**2)
+        
+        # For each perceptron, compute weight updates and input gradients
         for i, perceptron in enumerate(self.perceptrons):
-            # Pass the corresponding gradient for this perceptron
-            perceptron_gradients = gradients[:, i].reshape(-1, 1)
-            # The backward pass through each perceptron returns gradients w.r.t inputs
+            if len(activation_gradients.shape) == 1:
+                perceptron_gradients = activation_gradients.reshape(-1, 1)
+            else:
+                if activation_gradients.shape[1] == 1:
+                    perceptron_gradients = activation_gradients
+                else:
+                    perceptron_gradients = activation_gradients[:, i:i+1]
+            
             input_grad_i = perceptron.backward(perceptron_gradients, learning_rate)
-            # Accumulate gradients from all perceptrons
             input_gradients += input_grad_i
-        print("Layer backward pass input gradients:", input_gradients.shape)
+        
         return input_gradients

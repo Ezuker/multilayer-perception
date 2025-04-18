@@ -54,30 +54,27 @@ class Perceptron:
         self.last_input = inputs
         z = np.dot(inputs, self.weights) + self.bias
         self.last_output = z
-        print("z.shape",z.shape)
+        # print("z.shape",z.shape)
         return self.last_output
     
-    def backward(self, gradients: np.ndarray, learning_rate: float) -> np.ndarray:
+    def backward(self, gradients, learning_rate):
         """
-        Perform the backward pass through the perceptron.
+        Update weights and compute gradients for inputs.
+        """        
+        # Compute weight gradients (should match weights shape)
+        weight_gradients = np.dot(self.last_input.T, gradients)
         
-        Args:
-            gradients: Gradient of the loss with respect to the perceptron's output
-            learning_rate: Learning rate for weight updates
+        # Flatten if needed to match weights shape
+        if len(weight_gradients.shape) > 1:
+            weight_gradients = np.sum(weight_gradients, axis=1)
         
-        Returns:
-            Gradient of the loss with respect to the inputs
-        """
-        # Compute gradient w.r.t. weights and bias
-        delta = gradients * self.activation_derivative(self.last_output)
-        weight_gradients = np.dot(self.last_input.T, delta)
-        bias_gradient = np.sum(delta, axis=0)
+        bias_gradient = np.sum(gradients, axis=0)
         
         # Update weights and bias
         self.weights -= learning_rate * weight_gradients
         self.bias -= learning_rate * bias_gradient
         
-        # Compute gradient w.r.t. inputs for the previous layer
-        input_gradients = np.dot(delta, self.weights.T)
+        # Compute gradients for inputs (for previous layer)
+        input_gradients = np.dot(gradients, self.weights.reshape(1, -1))
         
         return input_gradients

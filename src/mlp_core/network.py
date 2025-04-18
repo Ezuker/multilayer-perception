@@ -1,5 +1,6 @@
 from .layer import Layer
 import numpy as np
+from tqdm import tqdm
 
 class Network:
     """Complete neural network composed of multiple layers."""
@@ -89,7 +90,7 @@ class Network:
         n_batches = max(1, n_samples // self.batch_size)
         history = {'loss': [], 'val_loss': []}
         
-        for epoch in range(self.epochs):
+        for epoch in tqdm(range(self.epochs)):
             indices = np.random.permutation(n_samples)
             X_shuffled = X_train[indices]
             y_shuffled = y_train[indices]
@@ -102,13 +103,7 @@ class Network:
                 y_batch = y_shuffled[start_idx:end_idx]
                 
                 y_pred = self.forward(X_batch)
-                print("y_pred shape:", y_pred.shape)
-                print("y_batch shape:", y_batch.shape)
-                print(y_pred)
-                print(y_batch)
                 batch_loss = self.loss_function(y_batch, y_pred)
-                print("Batch loss shape:", batch_loss.shape)
-                print("Batch loss:", batch_loss)
                 if isinstance(batch_loss, np.ndarray):
                     batch_loss = np.mean(batch_loss)
                 
@@ -119,16 +114,16 @@ class Network:
             history['loss'].append(epoch_loss)
             
             # Validation step
-            # if validation_data is not None:
-            #     X_val, y_val = validation_data
-            #     y_val_pred = self.forward(X_val)
-            #     val_loss = self.loss_function(y_val, y_val_pred)
-            #     if isinstance(val_loss, np.ndarray):
-            #         val_loss = np.mean(val_loss)
-            #     history['val_loss'].append(val_loss)
+            if validation_data is not None:
+                X_val, y_val = validation_data
+                y_val_pred = self.forward(X_val)
+                val_loss = self.loss_function(y_val, y_val_pred)
+                if isinstance(val_loss, np.ndarray):
+                    val_loss = np.mean(val_loss)
+                history['val_loss'].append(val_loss)
                 
-            #     if verbose and (epoch % 10 == 0 or epoch == self.epochs - 1):
-            #         print(f"Epoch {epoch+1}/{self.epochs}, Loss: {epoch_loss:.4f}, Val Loss: {val_loss:.4f}")
+                if epoch % 10 == 0 or epoch == self.epochs - 1:
+                    print(f"Epoch {epoch+1}/{self.epochs}, Loss: {epoch_loss:.4f}, Val Loss: {val_loss:.4f}")
             if (epoch % 10 == 0 or epoch == self.epochs - 1):
                 print(f"Epoch {epoch+1}/{self.epochs}, Loss: {epoch_loss:.4f}")
         
