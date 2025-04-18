@@ -43,7 +43,29 @@ class Network:
         return inputs
         
     def backward(self, y_true, y_pred, learning_rate):
-        pass
+        """
+        Perform the backward pass through the network.
+        
+        Parameters:
+        -----------
+        y_true : array-like, shape (n_samples, n_classes)
+            True labels (one-hot encoded for classification)
+        y_pred : array-like, shape (n_samples, n_classes)
+            Predicted labels
+        learning_rate : float
+            Learning rate for weight updates
+            
+        Returns:
+        --------
+        gradients : array-like, shape (n_samples, n_features)
+            Gradients of the loss with respect to the inputs
+        """
+        loss_gradient = self.loss_function(y_true, y_pred)
+        
+        for layer in reversed(self.layers):
+            loss_gradient = layer.backward(loss_gradient, learning_rate)
+        
+        return loss_gradient
         
     def fit(self, X_train, y_train, validation_data=None):
         """
@@ -80,14 +102,19 @@ class Network:
                 y_batch = y_shuffled[start_idx:end_idx]
                 
                 y_pred = self.forward(X_batch)
-                
+                print("y_pred shape:", y_pred.shape)
+                print("y_batch shape:", y_batch.shape)
+                print(y_pred)
+                print(y_batch)
                 batch_loss = self.loss_function(y_batch, y_pred)
+                print("Batch loss shape:", batch_loss.shape)
+                print("Batch loss:", batch_loss)
                 if isinstance(batch_loss, np.ndarray):
                     batch_loss = np.mean(batch_loss)
                 
                 epoch_loss += batch_loss * (end_idx - start_idx) / n_samples
                 
-                # self.backward(y_batch, y_pred, self.learning_rate)
+                self.backward(y_batch, y_pred, self.learning_rate)
             
             history['loss'].append(epoch_loss)
             

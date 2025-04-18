@@ -53,7 +53,8 @@ class Perceptron:
         elif name == 'tanh':
             return lambda x: np.tanh(x)
         elif name == 'softmax':
-            return lambda x: np.exp(x - np.max(x)) / np.sum(np.exp(x - np.max(x)), axis=0)
+            # return lambda x: np.exp(x - np.max(x)) / np.sum(np.exp(x - np.max(x)), axis=0)
+            return lambda x: x
         raise ValueError(f"Unknown activation function: {name}")
     
     def _get_activation_derivative(self, name: str) -> Callable:
@@ -80,10 +81,36 @@ class Perceptron:
             inputs: Input data
         
         Returns:
-            Output after applying activation function
+            the activation output of the perceptron
         """
         self.last_input = inputs
         z = np.dot(inputs, self.weights) + self.bias
+        print("z.shape",z.shape)
         self.last_output = self.activation_fn(z)
         print(self.last_output.shape)
         return self.last_output
+    
+    def backward(self, gradients: np.ndarray, learning_rate: float) -> np.ndarray:
+        """
+        Perform the backward pass through the perceptron.
+        
+        Args:
+            gradients: Gradient of the loss with respect to the perceptron's output
+            learning_rate: Learning rate for weight updates
+        
+        Returns:
+            Gradient of the loss with respect to the inputs
+        """
+        # Compute gradient w.r.t. weights and bias
+        delta = gradients * self.activation_derivative(self.last_output)
+        weight_gradients = np.dot(self.last_input.T, delta)
+        bias_gradient = np.sum(delta, axis=0)
+        
+        # Update weights and bias
+        self.weights -= learning_rate * weight_gradients
+        self.bias -= learning_rate * bias_gradient
+        
+        # Compute gradient w.r.t. inputs for the previous layer
+        input_gradients = np.dot(delta, self.weights.T)
+        
+        return input_gradients

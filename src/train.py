@@ -34,7 +34,7 @@ def main():
     if args.verbose:
         print(f"Loading configuration from: {args.config}")
     
-    try:
+    # try:
         layers_config, training_config = ConfigParser.parse_config(args.config)
         
         if args.verbose:
@@ -59,9 +59,9 @@ def main():
         history = network.fit(x_train, y_train)
 
         
-    except Exception as e:
-        print(f"Error: {e}")
-        sys.exit(1)
+    # except Exception as e:
+    #     print(f"Error: {e}")
+    #     sys.exit(1)
 
 if __name__ == '__main__':
     main()
