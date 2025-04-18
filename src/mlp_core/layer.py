@@ -15,6 +15,7 @@ class Layer:
         }
         self.perceptrons = [Perceptron(input_size, activation, weights_initializer) 
                              for _ in range(output_size)]
+        self.activation_function = self._get_activation_function(activation)
         
     @staticmethod
     def _get_activation_function(name: str):
@@ -26,7 +27,10 @@ class Layer:
         elif name == 'tanh':
             return lambda x: np.tanh(x)
         elif name == 'softmax':
-            return lambda x: np.exp(x) / np.sum(np.exp(x), axis=1, keepdims=True)
+            def softmax(x):
+                exp_logits = np.exp(x - np.max(x, axis=1, keepdims=True))
+                return exp_logits / np.sum(exp_logits, axis=1, keepdims=True)
+            return softmax
         raise ValueError(f"Unknown activation function: {name}")
     
     def __str__(self):
@@ -36,23 +40,11 @@ class Layer:
         """
         Compute the output of the layer given the inputs.
         """
-        logits = np.array([p.forward(inputs) for p in self.perceptrons]).T
-        # print("Logits shape:", logits.shape)
-        if self.config['activation'] == 'sigmoid':
-            outputs = 1 / (1 + np.exp(-logits))
-        elif self.config['activation'] == 'relu':
-            outputs = np.maximum(0, logits)
-        elif self.config['activation'] == 'tanh':
-            outputs = np.tanh(logits)
-        elif self.config['activation'] == 'softmax':
-            exp_logits = np.exp(logits - np.max(logits, axis=1, keepdims=True))
-            outputs = exp_logits / np.sum(exp_logits, axis=1, keepdims=True)
-        else:
-            raise ValueError(f"Unknown activation function: {self.config['activation']}")
+        Z_list = np.array([p.forward(inputs) for p in self.perceptrons]).T
+        outputs = self.activation_function(Z_list)
         
         for i, p in enumerate(self.perceptrons):
             p.last_activation = outputs[:, i:i+1]
-        # print("Layer forward pass output shape:", outputs.shape)
         return outputs
 
     def backward(self, gradients, learning_rate):

@@ -114,16 +114,16 @@ class Network:
             history['loss'].append(epoch_loss)
             
             # Validation step
-            if validation_data is not None:
-                X_val, y_val = validation_data
-                y_val_pred = self.forward(X_val)
-                val_loss = self.loss_function(y_val, y_val_pred)
-                if isinstance(val_loss, np.ndarray):
-                    val_loss = np.mean(val_loss)
-                history['val_loss'].append(val_loss)
+            # if validation_data is not None:
+            #     X_val, y_val = validation_data
+            #     y_val_pred = self.forward(X_val)
+            #     val_loss = self.loss_function(y_val, y_val_pred)
+            #     if isinstance(val_loss, np.ndarray):
+            #         val_loss = np.mean(val_loss)
+            #     history['val_loss'].append(val_loss)
                 
-                if epoch % 10 == 0 or epoch == self.epochs - 1:
-                    print(f"Epoch {epoch+1}/{self.epochs}, Loss: {epoch_loss:.4f}, Val Loss: {val_loss:.4f}")
+            #     if epoch % 10 == 0:
+            #         print(f"Epoch {epoch+1}/{self.epochs}, Loss: {epoch_loss:.4f}, Val Loss: {val_loss:.4f}")
             if (epoch % 10 == 0 or epoch == self.epochs - 1):
                 print(f"Epoch {epoch+1}/{self.epochs}, Loss: {epoch_loss:.4f}")
         

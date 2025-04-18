@@ -4,6 +4,8 @@
 import argparse
 import os
 import sys
+import matplotlib.pyplot as plt
+import numpy as np
 
 # Add parent directory to path to allow imports from mlp_core
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -25,6 +27,44 @@ def parse_args():
     parser.add_argument('--verbose', action='store_true',
                         help='Enable verbose output')
     return parser.parse_args()
+
+
+def plot_training_history(history):
+    """
+    Plot training and validation loss from a training history dictionary.
+    
+    Args:
+        history: Dictionary containing 'loss' and 'val_loss' lists
+    """
+    epochs = range(1, len(history['loss']) + 1)
+    
+    # Create figure with two subplots
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 5))
+    
+    # Plot training loss
+    ax1.plot(epochs, history['loss'], 'b-', label='Training Loss')
+    ax1.set_title('Training Loss')
+    ax1.set_xlabel('Epochs')
+    ax1.set_ylabel('Loss')
+    ax1.grid(True)
+    ax1.legend()
+    
+    # Plot validation loss if available
+    if 'val_loss' in history and history['val_loss']:
+        ax2.plot(epochs, history['val_loss'], 'r-', label='Validation Loss')
+        ax2.set_title('Validation Loss')
+        ax2.set_xlabel('Epochs')
+        ax2.set_ylabel('Loss')
+        ax2.grid(True)
+        ax2.legend()
+    else:
+        ax2.text(0.5, 0.5, 'No validation data', 
+                 horizontalalignment='center', verticalalignment='center')
+    
+    # Improve layout and show plot
+    plt.tight_layout()
+    plt.savefig('training_history.png')
+    plt.show()
 
 
 def main():
@@ -52,12 +92,9 @@ def main():
             print(f"Model will be saved to: {args.save}")
         
         x_train, y_train, x_val, y_val, x_mean, x_std = ProcessData.get_data(args.data_train, args.data_validation)
-        if args.verbose:
-            # print(x_train, y_train)
-            pass
-        print(f"Training data shape: {x_train.shape}, {y_train.shape}")
-        history = network.fit(x_train, y_train)
-
+        x_val = (x_val - x_mean) / x_std
+        history = network.fit(x_train, y_train, (x_val, y_val))
+        plot_training_history(history)
         
     # except Exception as e:
     #     print(f"Error: {e}")

@@ -26,9 +26,8 @@ class Perceptron:
         self.weights = self._initialize_weights(input_size, weights_initializer)
         self.bias = 0.0
             
-        self.last_input = None
-        self.last_output = None
-        self.last_activation = None
+        self.last_X = None
+        self.last_Z = None
     
     def _initialize_weights(self, size: int, method: str) -> np.ndarray:
         """Initialize weights based on chosen method."""
@@ -51,18 +50,17 @@ class Perceptron:
         Returns:
             the activation output of the perceptron
         """
-        self.last_input = inputs
+        self.last_X = inputs
         z = np.dot(inputs, self.weights) + self.bias
-        self.last_output = z
-        # print("z.shape",z.shape)
-        return self.last_output
+        self.last_Z = z
+        return self.last_Z
     
     def backward(self, gradients, learning_rate):
         """
         Update weights and compute gradients for inputs.
         """        
         # Compute weight gradients (should match weights shape)
-        weight_gradients = np.dot(self.last_input.T, gradients)
+        weight_gradients = np.dot(self.last_X.T, gradients)
         
         # Flatten if needed to match weights shape
         if len(weight_gradients.shape) > 1:

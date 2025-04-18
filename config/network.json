@@ -8,7 +8,7 @@
         },
         {
           "type": "hidden",
-          "units": 128,
+          "units": 64,
           "activation": "sigmoid",
           "weights_initializer": "heUniform"
         },
