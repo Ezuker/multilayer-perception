@@ -25,10 +25,7 @@ class Perceptron:
         
         self.weights = self._initialize_weights(input_size, weights_initializer)
         self.bias = 0.0
-        
-        self.activation_fn = self._get_activation_function(activation)
-        self.activation_derivative = self._get_activation_derivative(activation)
-        
+            
         self.last_input = None
         self.last_output = None
         self.last_activation = None
@@ -43,36 +40,7 @@ class Perceptron:
             return np.random.randn(size) * scale
         else:
             return np.random.randn(size) * 0.01
-    
-    def _get_activation_function(self, name: str) -> Callable:
-        """Get the activation function based on name."""
-        if name == 'sigmoid':
-            return lambda x: 1 / (1 + np.exp(-x))
-        elif name == 'relu':
-            return lambda x: np.maximum(0, x)
-        elif name == 'tanh':
-            return lambda x: np.tanh(x)
-        elif name == 'softmax':
-            # return lambda x: np.exp(x - np.max(x)) / np.sum(np.exp(x - np.max(x)), axis=0)
-            return lambda x: x
-        raise ValueError(f"Unknown activation function: {name}")
-    
-    def _get_activation_derivative(self, name: str) -> Callable:
-        """Get the derivative of the activation function."""
-        if name == 'sigmoid':
-            return lambda x: x * (1 - x)
-        elif name == 'relu':
-            return lambda x: np.where(x > 0, 1, 0)
-        elif name == 'tanh':
-            return lambda x: 1 - x**2
-        elif name == 'softmax':
-            def softmax_derivative(x):
-                s = x.reshape(-1, 1)
-                return np.diagflat(s) - np.dot(s, s.T)
-            return softmax_derivative
-        else:
-            raise ValueError(f"Unknown activation function: {name}")
-        
+            
     def forward(self, inputs: np.ndarray) -> np.ndarray:
         """
         Compute the output of the perceptron given the inputs.
@@ -85,9 +53,8 @@ class Perceptron:
         """
         self.last_input = inputs
         z = np.dot(inputs, self.weights) + self.bias
+        self.last_output = z
         print("z.shape",z.shape)
-        self.last_output = self.activation_fn(z)
-        print(self.last_output.shape)
         return self.last_output
     
     def backward(self, gradients: np.ndarray, learning_rate: float) -> np.ndarray:

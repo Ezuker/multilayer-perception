@@ -16,6 +16,19 @@ class Layer:
         self.perceptrons = [Perceptron(input_size, activation, weights_initializer) 
                              for _ in range(output_size)]
         
+    @staticmethod
+    def _get_activation_function(name: str):
+        """Get the activation function based on name."""
+        if name == 'sigmoid':
+            return lambda x: 1 / (1 + np.exp(-x))
+        elif name == 'relu':
+            return lambda x: np.maximum(0, x)
+        elif name == 'tanh':
+            return lambda x: np.tanh(x)
+        elif name == 'softmax':
+            return lambda x: np.exp(x) / np.sum(np.exp(x), axis=1, keepdims=True)
+        raise ValueError(f"Unknown activation function: {name}")
+    
     def __str__(self):
         return f"Layer with {len(self.perceptrons)} perceptrons, {self.config}"
         
@@ -23,25 +36,24 @@ class Layer:
         """
         Compute the output of the layer given the inputs.
         """
-        if self.config['activation'] == 'softmax':
-            logits = np.zeros((inputs.shape[0], len(self.perceptrons)))
-            for i, p in enumerate(self.perceptrons):
-                p.last_input = inputs
-                logits[:, i] = np.dot(inputs, p.weights) + p.bias
-            
+        logits = np.array([p.forward(inputs) for p in self.perceptrons]).T
+        print("Logits shape:", logits.shape)
+        if self.config['activation'] == 'sigmoid':
+            outputs = 1 / (1 + np.exp(-logits))
+        elif self.config['activation'] == 'relu':
+            outputs = np.maximum(0, logits)
+        elif self.config['activation'] == 'tanh':
+            outputs = np.tanh(logits)
+        elif self.config['activation'] == 'softmax':
             exp_logits = np.exp(logits - np.max(logits, axis=1, keepdims=True))
-            softmax_output = exp_logits / np.sum(exp_logits, axis=1, keepdims=True)
-            
-            for i, p in enumerate(self.perceptrons):
-                p.last_output = softmax_output[:, i:i+1]
-            
-            print("Layer forward pass output shape:", softmax_output.shape)
-            return softmax_output        
+            outputs = exp_logits / np.sum(exp_logits, axis=1, keepdims=True)
         else:
-            print("Layer forward pass input shape:", inputs.shape)
-            outputs = [p.forward(inputs) for p in self.perceptrons]
-            print("Layer forward pass output shape:", np.array(outputs).T.shape)
-            return np.array(outputs).T
+            raise ValueError(f"Unknown activation function: {self.config['activation']}")
+        
+        for i, p in enumerate(self.perceptrons):
+            p.last_activation = outputs[:, i:i+1]
+        print("Layer forward pass output shape:", outputs.shape)
+        return outputs
 
     def backward(self, gradients, learning_rate):
         """
