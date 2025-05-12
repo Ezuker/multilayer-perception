@@ -71,7 +71,9 @@ class Layer:
                     if self.config['activation'] == 'sigmoid':
                         activation_gradients[:, i] = gradients.flatten() * p.last_activation.flatten() * (1 - p.last_activation.flatten())
                     elif self.config['activation'] == 'relu':
-                        activation_gradients[:, i] = gradients.flatten() * (p.last_output.flatten() > 0)
+                        # Reshape last_Z to ensure proper broadcasting
+                        relu_mask = (p.last_Z.flatten() > 0)
+                        activation_gradients[:, i] = gradients.flatten() * relu_mask
                     elif self.config['activation'] == 'tanh':
                         activation_gradients[:, i] = gradients.flatten() * (1 - p.last_activation.flatten()**2)
             else:
@@ -81,7 +83,9 @@ class Layer:
                     if self.config['activation'] == 'sigmoid':
                         activation_gradients[:, i:i+1] = gradients[:, i:i+1] * p.last_activation * (1 - p.last_activation)
                     elif self.config['activation'] == 'relu':
-                        activation_gradients[:, i:i+1] = gradients[:, i:i+1] * (p.last_output > 0)
+                        # Shape p.last_Z to match the dimensions required for broadcasting
+                        relu_mask = (p.last_Z.reshape(-1, 1) > 0)
+                        activation_gradients[:, i:i+1] = gradients[:, i:i+1] * relu_mask
                     elif self.config['activation'] == 'tanh':
                         activation_gradients[:, i:i+1] = gradients[:, i:i+1] * (1 - p.last_activation**2)
         
