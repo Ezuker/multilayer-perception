@@ -1,35 +1,41 @@
 {
-    "network": {
+  "network": {
       "layers": [
-        {
-          "type": "input",
-          "units": 30,
-          "activation": "sigmoid"
-        },
-        {
-          "type": "hidden",
-          "units": 64,
-          "activation": "sigmoid",
-          "weights_initializer": "heUniform"
-        },
-        {
-          "type": "hidden",
-          "units": 64,
-          "activation": "sigmoid",
-          "weights_initializer": "heUniform"
-        },
-        {
-          "type": "output",
-          "units": 2,
-          "activation": "softmax",
-          "weights_initializer": "heUniform"
-        }
+          {
+              "type": "input",
+              "units": 30,
+              "activation": "relu"
+          },
+          {
+              "type": "hidden",
+              "units": 128,
+              "activation": "relu",
+              "weights_initializer": "heUniform"
+          },
+          {
+              "type": "hidden",
+              "units": 128,
+              "activation": "relu",
+              "weights_initializer": "heUniform"
+          },
+          {
+              "type": "hidden",
+              "units": 64,
+              "activation": "relu",
+              "weights_initializer": "heUniform"
+          },
+          {
+              "type": "output",
+              "units": 2,
+              "activation": "softmax",
+              "weights_initializer": "heUniform"
+          }
       ]
-    },
-    "training": {
+  },
+  "training": {
       "loss": "categoricalCrossentropy",
       "learning_rate": 0.01,
-      "batch_size": 32,
-      "epochs": 100
-    }
+      "batch_size": 64,
+      "epochs": 150
   }
+}

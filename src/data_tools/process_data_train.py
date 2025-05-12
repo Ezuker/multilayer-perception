@@ -57,4 +57,4 @@ class ProcessData:
         print(f"X train shape: {x_train.shape}, Y train shape: {y_train_onehot.shape}")
         print(f"X validation shape: {x_val.shape}, Y validation shape: {y_val_onehot.shape}")
         
-        return x_train, y_train_onehot, x_val, y_val_onehot, x_mean, x_std
+        return x_train, y_train_onehot, x_val, y_val_onehot
