@@ -15,7 +15,9 @@ class Network:
             
             layer = Layer(input_size, output_size, activation, weights_initializer)
             self.layers.append(layer)
-        self.loss_function = self._get_loss_function(training_config.get('loss', ''))
+        
+        loss_name = training_config.get('loss', '')
+        self.loss_function, self.loss_derivative = self._get_loss_function(loss_name)
         self.learning_rate = training_config.get('learning_rate', 0.01)
         self.batch_size = training_config.get('batch_size', 32)
         self.epochs = training_config.get('epochs', 100)
@@ -28,14 +30,22 @@ class Network:
     
     @staticmethod
     def _get_loss_function(name: str):
-        """Get the loss function based on name."""
+        """Get the loss function and its derivative based on name."""
         if name == 'mean_squared_error':
-            return lambda y_true, y_pred: np.mean((y_true - y_pred) ** 2)
+            loss = lambda y_true, y_pred: np.mean((y_true - y_pred) ** 2)
+            derivative = lambda y_true, y_pred: 2 * (y_pred - y_true) / y_true.shape[0]
+            return loss, derivative
         elif name == 'binary_crossentropy':
-            return lambda y_true, y_pred: -np.mean(y_true * np.log(y_pred + 1e-15) + 
+            loss = lambda y_true, y_pred: -np.mean(y_true * np.log(y_pred + 1e-15) + 
                                                    (1 - y_true) * np.log(1 - y_pred + 1e-15))
+            derivative = lambda y_true, y_pred: ((1 - y_true) / (1 - y_pred + 1e-15) - y_true / (y_pred + 1e-15)) / y_true.shape[0]
+            return loss, derivative
         elif name == 'categoricalCrossentropy':
-            return lambda y_true, y_pred: -np.sum(y_true * np.log(y_pred + 1e-15), axis=1)
+            # Note: Assumes y_pred is output of softmax
+            loss = lambda y_true, y_pred: -np.mean(np.sum(y_true * np.log(y_pred + 1e-15), axis=1))
+            # The derivative of categorical cross-entropy combined with softmax is simply (y_pred - y_true)
+            derivative = lambda y_true, y_pred: (y_pred - y_true) / y_true.shape[0]
+            return loss, derivative
         raise ValueError(f"Unknown loss function: {name}")
         
     def forward(self, inputs):
@@ -43,30 +53,24 @@ class Network:
             inputs = layer.forward(inputs)
         return inputs
         
-    def backward(self, y_true, y_pred, learning_rate):
+    def backward(self, initial_gradient, learning_rate):
         """
-        Perform the backward pass through the network.
+        Perform the backward pass through the network using the initial loss gradient.
         
         Parameters:
         -----------
-        y_true : array-like, shape (n_samples, n_classes)
-            True labels (one-hot encoded for classification)
-        y_pred : array-like, shape (n_samples, n_classes)
-            Predicted labels
+        initial_gradient : array-like
+            The gradient of the loss function with respect to the network's output (dL/dy_pred).
         learning_rate : float
             Learning rate for weight updates
             
         Returns:
         --------
-        gradients : array-like, shape (n_samples, n_features)
-            Gradients of the loss with respect to the inputs
+        None (updates layer weights internally)
         """
-        loss_gradient = self.loss_function(y_true, y_pred)
-        
+        gradient = initial_gradient
         for layer in reversed(self.layers):
-            loss_gradient = layer.backward(loss_gradient, learning_rate)
-        
-        return loss_gradient
+            gradient = layer.backward(gradient, learning_rate)
         
     def fit(self, X_train, y_train, validation_data=None):
         """
@@ -102,32 +106,38 @@ class Network:
                 X_batch = X_shuffled[start_idx:end_idx]
                 y_batch = y_shuffled[start_idx:end_idx]
                 
+                # Forward pass
                 y_pred = self.forward(X_batch)
-                batch_loss = self.loss_function(y_batch, y_pred)
-                if isinstance(batch_loss, np.ndarray):
-                    batch_loss = np.mean(batch_loss)
                 
+                # Calculate loss
+                batch_loss = self.loss_function(y_batch, y_pred)
                 epoch_loss += batch_loss * (end_idx - start_idx) / n_samples
                 
-                self.backward(y_batch, y_pred, self.learning_rate)
+                # Calculate initial gradient for backpropagation
+                initial_gradient = self.loss_derivative(y_batch, y_pred)
+                
+                # Backward pass
+                self.backward(initial_gradient, self.learning_rate)
             
             history['loss'].append(epoch_loss)
             
             # Validation step
-            # if validation_data is not None:
-            #     X_val, y_val = validation_data
-            #     y_val_pred = self.forward(X_val)
-            #     val_loss = self.loss_function(y_val, y_val_pred)
-            #     if isinstance(val_loss, np.ndarray):
-            #         val_loss = np.mean(val_loss)
-            #     history['val_loss'].append(val_loss)
+            val_loss = None
+            if validation_data is not None:
+                X_val, y_val = validation_data
+                y_val_pred = self.forward(X_val)
+                val_loss = self.loss_function(y_val, y_val_pred)
+                history['val_loss'].append(val_loss)
                 
-            #     if epoch % 10 == 0:
-            #         print(f"Epoch {epoch+1}/{self.epochs}, Loss: {epoch_loss:.4f}, Val Loss: {val_loss:.4f}")
+            # Print progress
             if (epoch % 10 == 0 or epoch == self.epochs - 1):
-                print(f"Epoch {epoch+1}/{self.epochs}, Loss: {epoch_loss:.4f}")
+                log_message = f"Epoch {epoch+1}/{self.epochs}, Loss: {epoch_loss:.4f}"
+                if val_loss is not None:
+                    log_message += f", Val Loss: {val_loss:.4f}"
+                print(log_message)
         
         return history
         
     def predict(self, X):
-        pass
+        """Generate predictions for input data X."""
+        return self.forward(X)

@@ -74,7 +74,7 @@ def main():
     if args.verbose:
         print(f"Loading configuration from: {args.config}")
     
-    # try:
+    try:
         layers_config, training_config = ConfigParser.parse_config(args.config)
         
         if args.verbose:
@@ -92,13 +92,28 @@ def main():
             print(f"Model will be saved to: {args.save}")
         
         x_train, y_train, x_val, y_val, x_mean, x_std = ProcessData.get_data(args.data_train, args.data_validation)
-        x_val = (x_val - x_mean) / x_std
-        history = network.fit(x_train, y_train, (x_val, y_val))
-        plot_training_history(history)
+        x_val_normalized = (x_val - x_mean) / x_std 
         
-    # except Exception as e:
-    #     print(f"Error: {e}")
-    #     sys.exit(1)
+        num_training_runs = 5
+        accumulated_history = {'loss': [], 'val_loss': []}
+        
+        print(f"Starting training for {num_training_runs} runs of {network.epochs} epochs each...")
+        
+        for run in range(num_training_runs):
+            print(f"--- Starting Training Run {run + 1}/{num_training_runs} ---")
+            history = network.fit(x_train, y_train, (x_val_normalized, y_val)) 
+            
+            accumulated_history['loss'].extend(history['loss'])
+            if 'val_loss' in history and history['val_loss']:
+                 accumulated_history['val_loss'].extend(history['val_loss'])
+            print(f"--- Finished Training Run {run + 1}/{num_training_runs} ---")
+
+        print("Plotting accumulated training history...")
+        plot_training_history(accumulated_history)
+        
+    except Exception as e:
+        print(f"Error: {e}")
+        sys.exit(1)
 
 if __name__ == '__main__':
     main()
