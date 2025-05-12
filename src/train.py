@@ -74,41 +74,24 @@ def main():
     if args.verbose:
         print(f"Loading configuration from: {args.config}")
     
-    # try:
-    layers_config, training_config = ConfigParser.parse_config(args.config)
-    
-    if args.verbose:
-        print(f"Network architecture:")
-        for i, layer in enumerate(layers_config):
-            print(f"  Layer {i}: {layer['type']} - {layer['units']} units, "
-                    f"{layer['activation']} activation")
-        print(f"Training parameters: {training_config}")
-    
-    network = Network(layers_config, training_config)
-    print("Network initialized successfully!")
-    if args.verbose:
-        print(f"Network architecture: {network}")
-        print(f"Ready to train using data from: {args.data_train}")
-        print(f"Model will be saved to: {args.save}")
-    
-    x_train, y_train, x_val, y_val = ProcessData.get_data(args.data_train, args.data_validation)
-    
-    num_training_runs = 5
-    accumulated_history = {'loss': [], 'val_loss': []}
-    
-    print(f"Starting training for {num_training_runs} runs of {network.epochs} epochs each...")
-    
-    for run in range(num_training_runs):
-        print(f"--- Starting Training Run {run + 1}/{num_training_runs} ---")
-        history = network.fit(x_train, y_train, (x_val, y_val)) 
+    try:
+        layers_config, training_config = ConfigParser.parse_config(args.config)
         
-        accumulated_history['loss'].extend(history['loss'])
-        if 'val_loss' in history and history['val_loss']:
-                accumulated_history['val_loss'].extend(history['val_loss'])
-        print(f"--- Finished Training Run {run + 1}/{num_training_runs} ---")
-
-    print("Plotting accumulated training history...")
-    plot_training_history(accumulated_history)
+        if args.verbose:
+            print(f"Network architecture:")
+            for i, layer in enumerate(layers_config):
+                print(f"  Layer {i}: {layer['type']} - {layer['units']} units, "
+                        f"{layer['activation']} activation")
+            print(f"Training parameters: {training_config}")
+        
+        network = Network(layers_config, training_config)
+        print("Network initialized successfully!")
+        if args.verbose:
+            print(f"Network architecture: {network}")
+            print(f"Ready to train using data from: {args.data_train}")
+            print(f"Model will be saved to: {args.save}")
+        
+        x_train, y_train, x_val, y_val = ProcessData.get_data(args.data_train, args.data_validation)
         
         num_training_runs = 5
         accumulated_history = {'loss': [], 'val_loss': []}
@@ -117,16 +100,16 @@ def main():
         
         for run in range(num_training_runs):
             print(f"--- Starting Training Run {run + 1}/{num_training_runs} ---")
-            history = network.fit(x_train, y_train, (x_val_normalized, y_val)) 
+            history = network.fit(x_train, y_train, (x_val, y_val)) 
             
             accumulated_history['loss'].extend(history['loss'])
             if 'val_loss' in history and history['val_loss']:
-                 accumulated_history['val_loss'].extend(history['val_loss'])
+                    accumulated_history['val_loss'].extend(history['val_loss'])
             print(f"--- Finished Training Run {run + 1}/{num_training_runs} ---")
 
         print("Plotting accumulated training history...")
         plot_training_history(accumulated_history)
-        
+
     except Exception as e:
         print(f"Error: {e}")
         sys.exit(1)
