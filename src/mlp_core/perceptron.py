@@ -1,5 +1,6 @@
 import numpy as np
 from typing import Callable
+from .optimizers import SGD
 
 class Perceptron:
     """
@@ -11,7 +12,8 @@ class Perceptron:
     
     def __init__(self, input_size: int, 
                  activation: str = 'sigmoid',
-                 weights_initializer: str = 'heUniform'):
+                 weights_initializer: str = 'heUniform',
+                 optimizer=None):
         """
         Initialize a perceptron with given input size and activation.
         
@@ -19,6 +21,7 @@ class Perceptron:
             input_size: Number of input features
             activation: Activation function name ('sigmoid', 'relu', etc.)
             weights_initializer: Method to initialize weights
+            optimizer: Optimizer instance to use for weight updates
         """
         self.input_size = input_size
         self.activation_name = activation
@@ -28,6 +31,9 @@ class Perceptron:
             
         self.last_X = None
         self.last_Z = None
+        
+        # Default optimizer is SGD if none provided
+        self.optimizer = optimizer if optimizer is not None else SGD()
     
     def _initialize_weights(self, size: int, method: str) -> np.ndarray:
         """Initialize weights based on chosen method."""
@@ -58,6 +64,13 @@ class Perceptron:
     def backward(self, gradients, learning_rate):
         """
         Update weights and compute gradients for inputs.
+        
+        Args:
+            gradients: Gradients from the next layer
+            learning_rate: Learning rate for weight updates
+            
+        Returns:
+            Gradients to propagate to the previous layer
         """        
         # Compute weight gradients (should match weights shape)
         weight_gradients = np.dot(self.last_X.T, gradients)
@@ -68,9 +81,12 @@ class Perceptron:
         
         bias_gradient = np.sum(gradients, axis=0)
         
-        # Update weights and bias
-        self.weights -= learning_rate * weight_gradients
-        self.bias -= learning_rate * bias_gradient
+        # Set optimizer learning rate
+        self.optimizer.learning_rate = learning_rate
+        
+        # Update weights using optimizer
+        self.weights = self.optimizer.update(self.weights, weight_gradients)
+        self.bias -= learning_rate * bias_gradient  # Simple update for bias
         
         # Compute gradients for inputs (for previous layer)
         input_gradients = np.dot(gradients, self.weights.reshape(1, -1))

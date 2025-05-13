@@ -28,8 +28,12 @@
   },
   "training": {
       "loss": "categoricalCrossentropy",
-      "learning_rate": 0.01,
+      "optimizer": "sgd_momentum",
+      "optimizer_params": {
+          "learning_rate": 0.01,
+          "momentum": 0.9
+      },
       "batch_size": 32,
-      "epochs": 300
+      "epochs": 200
   }
 }

@@ -6,14 +6,15 @@ class Layer:
     
     def __init__(self, input_size: int, output_size: int, 
                  activation: str = 'sigmoid',
-                 weights_initializer: str = 'heUniform'):
+                 weights_initializer: str = 'heUniform',
+                 optimizer=None):
         self.config = {
             'input_size': input_size,
             'output_size': output_size,
             'activation': activation,
             'weights_initializer': weights_initializer
         }
-        self.perceptrons = [Perceptron(input_size, activation, weights_initializer) 
+        self.perceptrons = [Perceptron(input_size, activation, weights_initializer, optimizer) 
                              for _ in range(output_size)]
         self.activation_function = self._get_activation_function(activation)
         
@@ -24,8 +25,12 @@ class Layer:
             return lambda x: 1 / (1 + np.exp(-x))
         elif name == 'relu':
             return lambda x: np.maximum(0, x)
+        elif name == 'leakyRelu':
+            return lambda x: np.where(x > 0, x, 0.01 * x)  # alpha=0.01 is the standard leaky factor
         elif name == 'tanh':
             return lambda x: np.tanh(x)
+        elif name == 'linear':
+            return lambda x: x  # Identity function that returns input unchanged
         elif name == 'softmax':
             def softmax(x):
                 exp_logits = np.exp(x - np.max(x, axis=1, keepdims=True))
@@ -62,6 +67,9 @@ class Layer:
         # Special case for softmax (when used with cross-entropy loss)
         if self.config['activation'] == 'softmax':
             activation_gradients = gradients
+        elif self.config['activation'] == 'linear':
+            # Derivative of linear/identity function is 1
+            activation_gradients = gradients
         else:
             # For other activations, compute gradients through activation function
             if len(gradients.shape) == 1 or gradients.shape[1] == 1:
@@ -74,6 +82,10 @@ class Layer:
                         # Reshape last_Z to ensure proper broadcasting
                         relu_mask = (p.last_Z.flatten() > 0)
                         activation_gradients[:, i] = gradients.flatten() * relu_mask
+                    elif self.config['activation'] == 'leakyRelu':
+                        # Derivative of leaky ReLU is 1 where x > 0, alpha otherwise
+                        leaky_mask = np.where(p.last_Z.flatten() > 0, 1, 0.01)
+                        activation_gradients[:, i] = gradients.flatten() * leaky_mask
                     elif self.config['activation'] == 'tanh':
                         activation_gradients[:, i] = gradients.flatten() * (1 - p.last_activation.flatten()**2)
             else:
@@ -86,6 +98,10 @@ class Layer:
                         # Shape p.last_Z to match the dimensions required for broadcasting
                         relu_mask = (p.last_Z.reshape(-1, 1) > 0)
                         activation_gradients[:, i:i+1] = gradients[:, i:i+1] * relu_mask
+                    elif self.config['activation'] == 'leakyRelu':
+                        # Derivative of leaky ReLU is 1 where x > 0, alpha otherwise
+                        leaky_mask = np.where(p.last_Z.reshape(-1, 1) > 0, 1, 0.01)
+                        activation_gradients[:, i:i+1] = gradients[:, i:i+1] * leaky_mask
                     elif self.config['activation'] == 'tanh':
                         activation_gradients[:, i:i+1] = gradients[:, i:i+1] * (1 - p.last_activation**2)
         

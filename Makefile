@@ -37,23 +37,30 @@ train:
 	@echo "Training model..."
 	$(VENV)/bin/python src/train.py \
 		--config $(CONFIG_DIR)/network.json \
-		--data-train $(DATA_DIR)/processed/train.csv \
-		--data-validation $(DATA_DIR)/processed/validation.csv \
+		--data-train $(DATA_DIR)/processed/train_data.csv \
+		--data-validation $(DATA_DIR)/processed/test_data.csv \
+
+predict:
+	@echo "Predicting with model..."
+	$(VENV)/bin/python src/predict.py \
+		--model $(MODELS_DIR)/model.pkl \
+		--data $(DATA_DIR)/processed/test_data.csv \
+		--verbose
 
 # Run with different configuration files
 train-%:
 	@echo "Training model with $* configuration..."
 	$(VENV)/bin/python src/train.py \
 		--config $(CONFIG_DIR)/$*.json \
-		--data-train $(DATA_DIR)/processed/train.csv \
-		--data-validation $(DATA_DIR)/processed/validation.csv \
+		--data-train $(DATA_DIR)/processed/train_data.csv \
+		--data-validation $(DATA_DIR)/processed/test_data.csv \
 		--save $(MODELS_DIR)/model_$*.pkl \
 		--verbose
 
 # Split and prepare dataset
 prepare-data:
 	@echo "Preparing dataset..."
-	$(VENV)/bin/python src/data_tools/split_dataset.py
+	$(VENV)/bin/python src/data_tools/split_dataset.py --dataset_path $(DATA_DIR)/raw/dataset.csv --train_ratio 0.70
 
 # Visualize data
 visualize:

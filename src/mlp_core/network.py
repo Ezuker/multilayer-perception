@@ -1,11 +1,22 @@
 from .layer import Layer
 import numpy as np
 from tqdm import tqdm
+from .optimizers import get_optimizer
 
 class Network:
     """Complete neural network composed of multiple layers."""
     
     def __init__(self, layers_config: list[dict], training_config: dict):
+        # Set up optimizer
+        optimizer_name = training_config.get('optimizer', 'sgd')
+        optimizer_params = training_config.get('optimizer_params', {})
+        
+        # Add learning rate to optimizer params if not already there
+        if 'learning_rate' not in optimizer_params:
+            optimizer_params['learning_rate'] = training_config.get('learning_rate', 0.01)
+            
+        self.optimizer = get_optimizer(optimizer_name, **optimizer_params)
+        
         self.layers = []
         for i in range(1, len(layers_config)):
             input_size = layers_config[i-1]['units']
@@ -13,7 +24,9 @@ class Network:
             activation = layers_config[i]['activation']
             weights_initializer = layers_config[i].get('weights_initializer', 'heUniform')
             
-            layer = Layer(input_size, output_size, activation, weights_initializer)
+            # Create a new optimizer instance for each perceptron in each layer
+            layer = Layer(input_size, output_size, activation, weights_initializer, 
+                         optimizer=get_optimizer(optimizer_name, **optimizer_params))
             self.layers.append(layer)
         
         loss_name = training_config.get('loss', '')
@@ -22,6 +35,8 @@ class Network:
         self.learning_rate = training_config.get('learning_rate', 0.01)
         self.batch_size = training_config.get('batch_size', 32)
         self.epochs = training_config.get('epochs', 100)
+        self.patience = training_config.get('patience', 10)
+        self.min_delta = training_config.get('min_delta', 0.001)
 
     def __str__(self):
         s = f"Network with {len(self.layers)} layers:\n"
@@ -95,6 +110,11 @@ class Network:
         n_batches = max(1, n_samples // self.batch_size)
         history = {'loss': [], 'val_loss': []}
         
+        # Early stopping variables
+        best_val_loss = float('inf')
+        best_network = None
+        patience_counter = 0
+        
         for epoch in tqdm(range(self.epochs)):
             indices = np.random.permutation(n_samples)
             X_shuffled = X_train[indices]
@@ -122,7 +142,7 @@ class Network:
             
             history['loss'].append(epoch_loss)
             
-            # Validation step
+            # Validation step - calculate at every epoch
             val_loss = None
             if validation_data is not None:
                 X_val, y_val = validation_data
@@ -130,14 +150,34 @@ class Network:
                 val_loss = self.loss_function(y_val, y_val_pred)
                 history['val_loss'].append(val_loss)
                 
-            # Print progress
+                # Early stopping check at every epoch
+                if val_loss <= best_val_loss - 0.001:
+                    best_val_loss = val_loss
+                    # Sauvegarder le meilleur réseau
+                    best_network = self.__class__([], {})  # Créer une instance vide
+                    best_network.__dict__ = self.__dict__.copy()  # Copier tous les attributs
+                    
+                    # Copier correctement les couches pour éviter les références partagées
+                    best_network.layers = []
+                    for layer in self.layers:
+                        layer_copy = Layer(layer.config['input_size'], layer.config['output_size'], 
+                                          layer.config['activation'], layer.config['weights_initializer'])
+                        
+                        # Copier les poids et biais de chaque perceptron
+                        for i, perceptron in enumerate(layer.perceptrons):
+                            layer_copy.perceptrons[i].weights = perceptron.weights.copy()
+                            layer_copy.perceptrons[i].bias = perceptron.bias
+                            
+                        best_network.layers.append(layer_copy)
+                    
+            # Print progress only at certain intervals
             if (epoch % 10 == 0 or epoch == self.epochs - 1):
                 log_message = f"Epoch {epoch+1}/{self.epochs}, Loss: {epoch_loss:.4f}"
                 if val_loss is not None:
                     log_message += f", Val Loss: {val_loss:.4f}"
                 print(log_message)
         
-        return history
+        return history, best_network
         
     def predict(self, X):
         """Generate predictions for input data X."""

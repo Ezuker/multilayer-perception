@@ -80,7 +80,7 @@ class ConfigParser:
             if 'activation' not in layer:
                 raise ValueError(f"Layer {i} is missing 'activation' attribute")
             
-            valid_activations = ['sigmoid', 'relu', 'tanh', 'softmax']
+            valid_activations = ['sigmoid', 'relu', 'tanh', 'softmax', 'linear', 'leakyRelu']
             if layer['activation'] not in valid_activations:
                 raise ValueError(f"Layer {i} has invalid activation function: {layer['activation']}")
             
@@ -97,13 +97,24 @@ class ConfigParser:
     @staticmethod
     def _validate_training_config(training: Dict) -> None:
         """Validate the training configuration."""
-        required_fields = ['loss', 'learning_rate', 'batch_size', 'epochs']
+        required_fields = ['loss', 'batch_size', 'epochs']
         for field in required_fields:
             if field not in training:
                 raise ValueError(f"Training configuration is missing '{field}'")
         
-        if not isinstance(training['learning_rate'], (int, float)) or training['learning_rate'] <= 0:
-            raise ValueError(f"Invalid learning rate: {training['learning_rate']}")
+        # Check if learning_rate is present directly or within optimizer_params
+        has_learning_rate = False
+        if 'learning_rate' in training:
+            has_learning_rate = True
+            if not isinstance(training['learning_rate'], (int, float)) or training['learning_rate'] <= 0:
+                raise ValueError(f"Invalid learning rate: {training['learning_rate']}")
+        elif 'optimizer_params' in training and 'learning_rate' in training['optimizer_params']:
+            has_learning_rate = True
+            if not isinstance(training['optimizer_params']['learning_rate'], (int, float)) or training['optimizer_params']['learning_rate'] <= 0:
+                raise ValueError(f"Invalid learning rate: {training['optimizer_params']['learning_rate']}")
+        
+        if not has_learning_rate:
+            raise ValueError("Training configuration is missing 'learning_rate' either directly or in 'optimizer_params'")
         
         if not isinstance(training['batch_size'], int) or training['batch_size'] <= 0:
             raise ValueError(f"Invalid batch size: {training['batch_size']}")
