@@ -17,7 +17,8 @@ class Network:
             self.layers.append(layer)
         
         loss_name = training_config.get('loss', '')
-        self.loss_function, self.loss_derivative = self._get_loss_function(loss_name)
+        if loss_name != '':
+            self.loss_function, self.loss_derivative = self._get_loss_function(loss_name)
         self.learning_rate = training_config.get('learning_rate', 0.01)
         self.batch_size = training_config.get('batch_size', 32)
         self.epochs = training_config.get('epochs', 100)
