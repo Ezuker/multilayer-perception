@@ -109,6 +109,8 @@ def main():
 
         print("Plotting accumulated training history...")
         plot_training_history(accumulated_history)
+        print("Saving model...")
+        network.save(args.save)
 
     except Exception as e:
         print(f"Error: {e}")
