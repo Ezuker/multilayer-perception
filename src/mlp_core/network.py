@@ -141,3 +141,86 @@ class Network:
     def predict(self, X):
         """Generate predictions for input data X."""
         return self.forward(X)
+    
+    def save(self, filepath):
+        """Save the model to a file."""
+        import json
+        
+        # We can't directly save the layers due to unpicklable lambda functions
+        # Instead, save the layer configurations and weights as JSON
+        layers_data = []
+        for layer in self.layers:
+            # Convert numpy arrays to lists to make them JSON serializable
+            weights = [p.weights.tolist() for p in layer.perceptrons]
+            biases = [float(p.bias) for p in layer.perceptrons]
+            
+            layer_data = {
+                'input_size': layer.config['input_size'],
+                'output_size': layer.config['output_size'],
+                'activation': layer.config['activation'],
+                'weights_initializer': layer.config['weights_initializer'],
+                'weights': weights,
+                'biases': biases
+            }
+            layers_data.append(layer_data)
+            
+        # Save the network configuration and layer data
+        network_data = {
+            'layers_data': layers_data,
+            'learning_rate': self.learning_rate,
+            'batch_size': self.batch_size,
+            'epochs': self.epochs,
+            # Also store the loss function name
+            'loss': next((name for name, (func, _) in {
+                'mean_squared_error': self._get_loss_function('mean_squared_error'),
+                'binary_crossentropy': self._get_loss_function('binary_crossentropy'),
+                'categoricalCrossentropy': self._get_loss_function('categoricalCrossentropy')
+            }.items() if func == self.loss_function), '')
+        }
+        
+        # Save as JSON file which can handle the data properly
+        with open(filepath, 'w') as f:
+            json.dump(network_data, f, indent=2)
+    
+    @classmethod
+    def load(cls, filepath):
+        """Load a model from a file."""
+        import json
+        from .layer import Layer
+        
+        with open(filepath, 'r') as f:
+            network_data = json.load(f)
+        
+        # Create a minimal network structure to populate
+        layers_config = []
+        for layer_data in network_data['layers_data']:
+            # Add input layer config
+            if len(layers_config) == 0:
+                layers_config.append({'units': layer_data['input_size']})
+            # Add current layer config
+            layers_config.append({
+                'units': layer_data['output_size'],
+                'activation': layer_data['activation'],
+                'weights_initializer': layer_data['weights_initializer']
+            })
+        
+        # Create training config
+        training_config = {
+            'learning_rate': network_data['learning_rate'],
+            'batch_size': network_data['batch_size'],
+            'epochs': network_data['epochs'],
+            'loss': network_data.get('loss', '')  # Get loss name from saved data if available
+        }
+        
+        # Create the network
+        network = cls(layers_config, training_config)
+        
+        # Now load the weights and biases
+        for i, layer_data in enumerate(network_data['layers_data']):
+            for j, (weights, bias) in enumerate(zip(layer_data['weights'], layer_data['biases'])):
+                network.layers[i].perceptrons[j].weights = np.array(weights)  # Convert list back to numpy array
+                network.layers[i].perceptrons[j].bias = bias
+                
+        return network
+
+
