@@ -39,10 +39,8 @@ def plot_training_history(history):
     """
     epochs = range(1, len(history['loss']) + 1)
     
-    # Create figure with two subplots
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 5))
+    _, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 5))
     
-    # Plot training loss
     ax1.plot(epochs, history['loss'], 'b-', label='Training Loss')
     ax1.set_title('Training Loss')
     ax1.set_xlabel('Epochs')
@@ -50,7 +48,6 @@ def plot_training_history(history):
     ax1.grid(True)
     ax1.legend()
     
-    # Plot validation loss if available
     if 'val_loss' in history and history['val_loss']:
         ax2.plot(epochs, history['val_loss'], 'r-', label='Validation Loss')
         ax2.set_title('Validation Loss')
@@ -62,7 +59,6 @@ def plot_training_history(history):
         ax2.text(0.5, 0.5, 'No validation data', 
                  horizontalalignment='center', verticalalignment='center')
     
-    # Improve layout and show plot
     plt.tight_layout()
     plt.savefig('training_history.png')
     plt.show()
@@ -75,13 +71,16 @@ def main():
     if args.verbose:
         print(f"Loading configuration from: {args.config}")
     
-    # try:
+    try:
         layers_config, training_config = ConfigParser.parse_config(args.config)
         
         if args.verbose:
             print(f"Network architecture:")
             for i, layer in enumerate(layers_config):
-                print(f"  Layer {i}: {layer['type']} - {layer['units']} units, "
+                if layer['type'] == 'dropout':
+                    print(f"  Layer {i}: {layer['type']} - {layer['dropout']} dropout")
+                else:
+                    print(f"  Layer {i}: {layer['type']} - {layer['units']} units, "
                         f"{layer['activation']} activation")
             print(f"Training parameters: {training_config}")
         
@@ -111,11 +110,11 @@ def main():
         print("Plotting accumulated training history...")
         plot_training_history(accumulated_history)
         print("Saving model...")
-        best_network.save(args.save)
+        best_network.save(f"{args.save}")
 
-    # except Exception as e:
-    #     print(f"Error: {e}")
-    #     sys.exit(1)
+    except Exception as e:
+        print(f"Error: {e}")
+        sys.exit(1)
 
 if __name__ == '__main__':
     main()

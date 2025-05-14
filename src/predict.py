@@ -62,14 +62,12 @@ def binary_cross_entropy(y_true, y_pred, verbose=False):
     """
     import numpy as np
     
-    # Add small epsilon to avoid log(0)
     epsilon = 1e-15
     y_pred = np.clip(y_pred, epsilon, 1 - epsilon)
     
     if verbose:
         print(f"First few examples - y_true: {y_true[:3]}, y_pred: {y_pred[:3]}")
     
-    # Calculate binary cross-entropy
     N = len(y_true)
     error = -(1/N) * np.sum(y_true * np.log(y_pred) + (1 - y_true) * np.log(1 - y_pred))
     
@@ -86,21 +84,16 @@ def main():
         args = argparse()
         verbose = args.verbose
 
-        # Load model and data
         model = network.Network.load(args.model_path)
         x_val, y_val, _, _ = process_data_train.ProcessData.get_data(args.data_path)
 
-        # Make predictions
         results = predict(model, x_val)
         
-        # Calculate binary cross-entropy error
         bce_error = binary_cross_entropy(y_val, results['raw_predictions'], verbose=verbose)
         
-        # Get true class labels
         y_true_classes = np.argmax(y_val, axis=1)
         y_true_labels = np.array(['B', 'M'])[y_true_classes]
 
-        # Create results dataframe
         df_results = pd.DataFrame({
             'True_Label': y_true_labels,
             'Prediction': results['class_labels'],
@@ -119,14 +112,12 @@ def main():
         print(f"Average confidence: {results['confidence'].mean():.4f}")
         print(f"Binary Cross-Entropy Error: {bce_error:.6f}")
         
-        # Calculate and print accuracy
         accuracy = np.mean(results['class_indices'] == y_true_classes)
         print(f"Accuracy: {accuracy:.4f}")
         
         print("\n===== Sample Predictions (first 10) =====")
         print(df_results.head(10))
         
-        # Save predictions to file
         output_path = args.data_path.replace(".csv", "_predictions.csv")
         output_path = output_path.replace("processed", "predictions")
         os.makedirs(os.path.dirname(output_path), exist_ok=True)

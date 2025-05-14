@@ -1,4 +1,5 @@
 from .layer import Layer
+from .dropout import Dropout
 import numpy as np
 from tqdm import tqdm
 from .optimizers import get_optimizer
@@ -7,24 +8,24 @@ class Network:
     """Complete neural network composed of multiple layers."""
     
     def __init__(self, layers_config: list[dict], training_config: dict):
-        # Set up optimizer
         optimizer_name = training_config.get('optimizer', 'sgd')
         optimizer_params = training_config.get('optimizer_params', {})
         
-        # Add learning rate to optimizer params if not already there
-        if 'learning_rate' not in optimizer_params:
-            optimizer_params['learning_rate'] = training_config.get('learning_rate', 0.01)
-            
         self.optimizer = get_optimizer(optimizer_name, **optimizer_params)
         
         self.layers = []
+        print(layers_config)
         for i in range(1, len(layers_config)):
+            if layers_config[i].get("type") == 'dropout':
+                dropout_rate = layers_config[i]['dropout']
+                units = layers_config[i]['units']
+                self.layers.append(Dropout(keep_prob=1 - dropout_rate, units=units))
+                continue
             input_size = layers_config[i-1]['units']
             output_size = layers_config[i]['units']
             activation = layers_config[i]['activation']
             weights_initializer = layers_config[i].get('weights_initializer', 'heUniform')
             
-            # Create a new optimizer instance for each perceptron in each layer
             layer = Layer(input_size, output_size, activation, weights_initializer, 
                          optimizer=get_optimizer(optimizer_name, **optimizer_params))
             self.layers.append(layer)
@@ -54,12 +55,10 @@ class Network:
         elif name == 'binary_crossentropy':
             loss = lambda y_true, y_pred: -np.mean(y_true * np.log(y_pred + 1e-15) + 
                                                    (1 - y_true) * np.log(1 - y_pred + 1e-15))
-            derivative = lambda y_true, y_pred: ((1 - y_true) / (1 - y_pred + 1e-15) - y_true / (y_pred + 1e-15)) / y_true.shape[0]
+            derivative = lambda y_true, y_pred: (y_pred - y_true) / y_true.shape[0]
             return loss, derivative
         elif name == 'categoricalCrossentropy':
-            # Note: Assumes y_pred is output of softmax
             loss = lambda y_true, y_pred: -np.mean(np.sum(y_true * np.log(y_pred + 1e-15), axis=1))
-            # The derivative of categorical cross-entropy combined with softmax is simply (y_pred - y_true)
             derivative = lambda y_true, y_pred: (y_pred - y_true) / y_true.shape[0]
             return loss, derivative
         raise ValueError(f"Unknown loss function: {name}")
@@ -110,12 +109,10 @@ class Network:
         n_batches = max(1, n_samples // self.batch_size)
         history = {'loss': [], 'val_loss': []}
         
-        # Early stopping variables
         best_val_loss = float('inf')
         best_network = None
-        patience_counter = 0
         
-        for epoch in tqdm(range(self.epochs)):
+        for epoch in range(self.epochs):
             indices = np.random.permutation(n_samples)
             X_shuffled = X_train[indices]
             y_shuffled = y_train[indices]
@@ -142,7 +139,6 @@ class Network:
             
             history['loss'].append(epoch_loss)
             
-            # Validation step - calculate at every epoch
             val_loss = None
             if validation_data is not None:
                 X_val, y_val = validation_data
@@ -150,33 +146,17 @@ class Network:
                 val_loss = self.loss_function(y_val, y_val_pred)
                 history['val_loss'].append(val_loss)
                 
-                # Early stopping check at every epoch
                 if val_loss <= best_val_loss - 0.001:
                     best_val_loss = val_loss
-                    # Sauvegarder le meilleur réseau
-                    best_network = self.__class__([], {})  # Créer une instance vide
-                    best_network.__dict__ = self.__dict__.copy()  # Copier tous les attributs
+                    best_network = self.clone()
                     
-                    # Copier correctement les couches pour éviter les références partagées
-                    best_network.layers = []
-                    for layer in self.layers:
-                        layer_copy = Layer(layer.config['input_size'], layer.config['output_size'], 
-                                          layer.config['activation'], layer.config['weights_initializer'])
-                        
-                        # Copier les poids et biais de chaque perceptron
-                        for i, perceptron in enumerate(layer.perceptrons):
-                            layer_copy.perceptrons[i].weights = perceptron.weights.copy()
-                            layer_copy.perceptrons[i].bias = perceptron.bias
-                            
-                        best_network.layers.append(layer_copy)
-                    
-            # Print progress only at certain intervals
             if (epoch % 10 == 0 or epoch == self.epochs - 1):
                 log_message = f"Epoch {epoch+1}/{self.epochs}, Loss: {epoch_loss:.4f}"
                 if val_loss is not None:
                     log_message += f", Val Loss: {val_loss:.4f}"
                 print(log_message)
         
+        print("Best validation loss:", best_val_loss, "at epoch", history['val_loss'].index(best_val_loss) + 1)
         return history, best_network
         
     def predict(self, X):
@@ -187,11 +167,11 @@ class Network:
         """Save the model to a file."""
         import json
         
-        # We can't directly save the layers due to unpicklable lambda functions
-        # Instead, save the layer configurations and weights as JSON
         layers_data = []
         for layer in self.layers:
-            # Convert numpy arrays to lists to make them JSON serializable
+            # Skip dropout layers because we don't need it while predicting
+            if isinstance(layer, Dropout):
+                continue
             weights = [p.weights.tolist() for p in layer.perceptrons]
             biases = [float(p.bias) for p in layer.perceptrons]
             
@@ -201,17 +181,15 @@ class Network:
                 'activation': layer.config['activation'],
                 'weights_initializer': layer.config['weights_initializer'],
                 'weights': weights,
-                'biases': biases
+                'biases': biases,
             }
             layers_data.append(layer_data)
             
-        # Save the network configuration and layer data
         network_data = {
             'layers_data': layers_data,
             'learning_rate': self.learning_rate,
             'batch_size': self.batch_size,
             'epochs': self.epochs,
-            # Also store the loss function name
             'loss': next((name for name, (func, _) in {
                 'mean_squared_error': self._get_loss_function('mean_squared_error'),
                 'binary_crossentropy': self._get_loss_function('binary_crossentropy'),
@@ -219,7 +197,6 @@ class Network:
             }.items() if func == self.loss_function), '')
         }
         
-        # Save as JSON file which can handle the data properly
         with open(filepath, 'w') as f:
             json.dump(network_data, f, indent=2)
     
@@ -227,41 +204,36 @@ class Network:
     def load(cls, filepath):
         """Load a model from a file."""
         import json
-        from .layer import Layer
         
         with open(filepath, 'r') as f:
             network_data = json.load(f)
         
-        # Create a minimal network structure to populate
         layers_config = []
         for layer_data in network_data['layers_data']:
-            # Add input layer config
             if len(layers_config) == 0:
                 layers_config.append({'units': layer_data['input_size']})
-            # Add current layer config
             layers_config.append({
                 'units': layer_data['output_size'],
                 'activation': layer_data['activation'],
                 'weights_initializer': layer_data['weights_initializer']
             })
         
-        # Create training config
         training_config = {
             'learning_rate': network_data['learning_rate'],
             'batch_size': network_data['batch_size'],
             'epochs': network_data['epochs'],
-            'loss': network_data.get('loss', '')  # Get loss name from saved data if available
+            'loss': network_data.get('loss', '')
         }
         
-        # Create the network
         network = cls(layers_config, training_config)
         
-        # Now load the weights and biases
         for i, layer_data in enumerate(network_data['layers_data']):
             for j, (weights, bias) in enumerate(zip(layer_data['weights'], layer_data['biases'])):
                 network.layers[i].perceptrons[j].weights = np.array(weights)  # Convert list back to numpy array
                 network.layers[i].perceptrons[j].bias = bias
-                
         return network
-
-
+    
+    def clone(self):
+        """Create a deep copy of the network."""
+        import copy
+        return copy.deepcopy(self)

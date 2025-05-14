@@ -9,14 +9,19 @@
           {
               "type": "hidden",
               "units": 32,
-              "activation": "relu",
-              "weights_initializer": "xavierUniform"
+              "activation": "sigmoid",
+              "weights_initializer": "heUniform"
+          },
+          {
+                "type": "dropout",
+                "units": 32,
+                "dropout": 0.2
           },
           {
               "type": "hidden",
               "units": 16,
-              "activation": "leakyRelu",
-              "weights_initializer": "xavierUniform"
+              "activation": "relu",
+              "weights_initializer": "heUniform"
           },
           {
               "type": "output",
@@ -27,9 +32,9 @@
       ]
   },
   "training": {
-      "loss": "categoricalCrossentropy",
+      "loss": "binary_crossentropy",
       "learning_rate": 0.01,
-      "batch_size": 32,
-      "epochs": 300
+      "batch_size": 16,
+      "epochs": 700
   }
 }

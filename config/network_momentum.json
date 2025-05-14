@@ -13,10 +13,20 @@
               "weights_initializer": "xavierUniform"
           },
           {
+                "type": "dropout",
+                "units": 32,
+                "dropout": 0.2
+          },
+          {
               "type": "hidden",
               "units": 16,
               "activation": "leakyRelu",
               "weights_initializer": "xavierUniform"
+          },
+          {
+                "type": "dropout",
+                "units": 16,
+                "dropout": 0.3
           },
           {
               "type": "output",
@@ -27,13 +37,13 @@
       ]
   },
   "training": {
-      "loss": "categoricalCrossentropy",
+      "loss": "binary_crossentropy",
       "optimizer": "sgd_momentum",
       "optimizer_params": {
           "learning_rate": 0.01,
-          "momentum": 0.9
+          "momentum": 0.90
       },
-      "batch_size": 32,
-      "epochs": 200
+      "batch_size": 16,
+      "epochs": 700
   }
 }

@@ -5,7 +5,6 @@ from pathlib import Path
 import os
 
 def main():
-	# Get the project root directory (2 levels up from the script location)
 	script_dir = Path(__file__).resolve().parent
 	project_root = script_dir.parent.parent
 

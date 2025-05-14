@@ -32,7 +32,6 @@ class Perceptron:
         self.last_X = None
         self.last_Z = None
         
-        # Default optimizer is SGD if none provided
         self.optimizer = optimizer if optimizer is not None else SGD()
     
     def _initialize_weights(self, size: int, method: str) -> np.ndarray:

@@ -71,6 +71,12 @@ class ConfigParser:
             raise ValueError("Network must have at least two hidden layers")
         
         for i, layer in enumerate(layers):
+            if layer['type'] == 'dropout':
+                if 'dropout' not in layer:
+                    raise ValueError(f"Layer {i} is missing 'dropout' attribute")
+                if not isinstance(layer['dropout'], (int, float)) or layer['dropout'] < 0 or layer['dropout'] >= 1:
+                    raise ValueError(f"Layer {i} has invalid dropout rate: {layer['dropout']}. Must be between 0 and 1.")
+                continue
             if 'type' not in layer:
                 raise ValueError(f"Layer {i} is missing 'type' attribute")
             
@@ -91,7 +97,7 @@ class ConfigParser:
             if i > 0 and 'weights_initializer' not in layer:
                 layer['weights_initializer'] = 'heUniform'
             
-            if i > 0 and i < len(layers) - 1 and layer['type'] != 'hidden':
+            if i > 0 and i < len(layers) - 1 and layer['type'] != 'hidden' and layer['type'] != 'dropout':
                 raise ValueError(f"Layer {i} must be of type 'hidden' if not input or output")
     
     @staticmethod
@@ -102,7 +108,6 @@ class ConfigParser:
             if field not in training:
                 raise ValueError(f"Training configuration is missing '{field}'")
         
-        # Check if learning_rate is present directly or within optimizer_params
         has_learning_rate = False
         if 'learning_rate' in training:
             has_learning_rate = True
@@ -122,9 +127,9 @@ class ConfigParser:
         if not isinstance(training['epochs'], int) or training['epochs'] <= 0:
             raise ValueError(f"Invalid epochs: {training['epochs']}")
         
-        valid_losses = ['categoricalCrossentropy', 'mse', 'binaryCrossentropy']
+        valid_losses = ['categoricalCrossentropy', 'mean_squared_error', 'binary_crossentropy']
         if training['loss'] not in valid_losses:
-            raise ValueError(f"Invalid loss function: {training['loss']}")
+            raise ValueError(f"Invalid loss function: {training['loss']}. Valid options are: {valid_losses}")
 
 
 def parse_network_config(config_path: str) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:

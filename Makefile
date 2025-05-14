@@ -7,7 +7,11 @@ MODELS_DIR = models
 CONFIG_DIR = config
 
 # Default target
-all: setup train
+all: prepare-data train predict
+
+all-adam: prepare-data train-adam predict-adam
+all-momentum: prepare-data train-momentum predict-momentum
+all-rmsprop: prepare-data train-rmsprop predict-rmsprop
 
 # Setup virtual environment and install dependencies
 setup:
@@ -39,6 +43,18 @@ train:
 		--config $(CONFIG_DIR)/network.json \
 		--data-train $(DATA_DIR)/processed/train_data.csv \
 		--data-validation $(DATA_DIR)/processed/test_data.csv \
+		--save $(MODELS_DIR)/model.pkl \
+		--verbose
+
+# Run with different configuration files
+train-%:
+	@echo "Training model with $* configuration..."
+	$(VENV)/bin/python src/train.py \
+		--config $(CONFIG_DIR)/network_$*.json \
+		--data-train $(DATA_DIR)/processed/train_data.csv \
+		--data-validation $(DATA_DIR)/processed/test_data.csv \
+		--save $(MODELS_DIR)/model_$*.pkl \
+		--verbose
 
 predict:
 	@echo "Predicting with model..."
@@ -47,20 +63,18 @@ predict:
 		--data $(DATA_DIR)/processed/test_data.csv \
 		--verbose
 
-# Run with different configuration files
-train-%:
-	@echo "Training model with $* configuration..."
-	$(VENV)/bin/python src/train.py \
-		--config $(CONFIG_DIR)/$*.json \
-		--data-train $(DATA_DIR)/processed/train_data.csv \
-		--data-validation $(DATA_DIR)/processed/test_data.csv \
-		--save $(MODELS_DIR)/model_$*.pkl \
+
+predict-%:
+	@echo "Predicting with $* model..."
+	$(VENV)/bin/python src/predict.py \
+		--model $(MODELS_DIR)/model_$*.pkl \
+		--data $(DATA_DIR)/processed/test_data.csv \
 		--verbose
 
 # Split and prepare dataset
 prepare-data:
 	@echo "Preparing dataset..."
-	$(VENV)/bin/python src/data_tools/split_dataset.py --dataset_path $(DATA_DIR)/raw/dataset.csv --train_ratio 0.70
+	$(VENV)/bin/python src/data_tools/split_dataset.py --dataset_path $(DATA_DIR)/raw/dataset.csv --train_ratio 0.75
 
 # Visualize data
 visualize:

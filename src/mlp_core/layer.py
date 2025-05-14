@@ -12,7 +12,7 @@ class Layer:
             'input_size': input_size,
             'output_size': output_size,
             'activation': activation,
-            'weights_initializer': weights_initializer
+            'weights_initializer': weights_initializer,
         }
         self.perceptrons = [Perceptron(input_size, activation, weights_initializer, optimizer) 
                              for _ in range(output_size)]
@@ -26,11 +26,11 @@ class Layer:
         elif name == 'relu':
             return lambda x: np.maximum(0, x)
         elif name == 'leakyRelu':
-            return lambda x: np.where(x > 0, x, 0.01 * x)  # alpha=0.01 is the standard leaky factor
+            return lambda x: np.where(x > 0, x, 0.01 * x)
         elif name == 'tanh':
             return lambda x: np.tanh(x)
         elif name == 'linear':
-            return lambda x: x  # Identity function that returns input unchanged
+            return lambda x: x
         elif name == 'softmax':
             def softmax(x):
                 exp_logits = np.exp(x - np.max(x, axis=1, keepdims=True))
@@ -58,7 +58,6 @@ class Layer:
         """
         batch_size = gradients.shape[0]
         
-        # Reshape gradients if they're 1D
         if len(gradients.shape) == 1:
             gradients = gradients.reshape(-1, 1)
         
