@@ -93,24 +93,17 @@ def main():
         
         x_train, y_train, x_val, y_val = ProcessData.get_data(args.data_train, args.data_validation)
         
-        num_training_runs = 1
         accumulated_history = {'loss': [], 'val_loss': []}
+        history, best_network = network.fit(x_train, y_train, (x_val, y_val))
         
-        print(f"Starting training for {num_training_runs} runs of {network.epochs} epochs each...")
-        
-        for run in range(num_training_runs):
-            print(f"--- Starting Training Run {run + 1}/{num_training_runs} ---")
-            history, best_network = network.fit(x_train, y_train, (x_val, y_val))
-            
-            accumulated_history['loss'].extend(history['loss'])
-            if 'val_loss' in history and history['val_loss']:
-                    accumulated_history['val_loss'].extend(history['val_loss'])
-            print(f"--- Finished Training Run {run + 1}/{num_training_runs} ---")
+        accumulated_history['loss'].extend(history['loss'])
+        if 'val_loss' in history and history['val_loss']:
+                accumulated_history['val_loss'].extend(history['val_loss'])
 
         print("Plotting accumulated training history...")
         plot_training_history(accumulated_history)
         print("Saving model...")
-        best_network.save(f"{args.save}")
+        best_network.save(f"{args.save}", history)
 
     except Exception as e:
         print(f"Error: {e}")

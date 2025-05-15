@@ -105,9 +105,36 @@ class Network:
         history : dict
             Dictionary containing training metrics (loss, val_loss) per epoch
         """
+        def calculate_metrics(y_true, y_pred_prob, threshold=0.5):
+            y_pred = (y_pred_prob > threshold).astype(int)
+            
+            # Précision globale
+            accuracy = np.mean(y_pred == y_true)
+            
+            # Calcul matrice de confusion
+            true_pos = np.sum((y_true == 1) & (y_pred == 1))
+            false_pos = np.sum((y_true == 0) & (y_pred == 1))
+            true_neg = np.sum((y_true == 0) & (y_pred == 0))
+            false_neg = np.sum((y_true == 1) & (y_pred == 0))
+            
+            # Métriques dérivées
+            precision = true_pos / (true_pos + false_pos) if (true_pos + false_pos) > 0 else 0
+            recall = true_pos / (true_pos + false_neg) if (true_pos + false_neg) > 0 else 0
+            f1 = true_pos / (true_pos + 0.5 * (false_pos + false_neg)) if (true_pos + 0.5 * (false_pos + false_neg)) > 0 else 0
+            
+            return {
+                'accuracy': accuracy,
+                'precision': precision,
+                'recall': recall,
+                'f1_score': f1,
+                'true_pos': true_pos,
+                'false_pos': false_pos,
+                'true_neg': true_neg,
+                'false_neg': false_neg
+            }
         n_samples = len(X_train)
         n_batches = max(1, n_samples // self.batch_size)
-        history = {'loss': [], 'val_loss': []}
+        history = {'loss': [], 'val_loss': [], 'accuracy': [], 'val_accuracy': []}
         
         best_val_loss = float('inf')
         best_network = None
@@ -127,6 +154,11 @@ class Network:
                 
                 # Forward pass
                 y_pred = self.forward(X_batch)
+                batch_metrics = calculate_metrics(y_batch, y_pred)
+                for metric_name, value in batch_metrics.items():
+                    if f'train_{metric_name}' not in history:
+                        history[f'train_{metric_name}'] = []
+                    history[f'train_{metric_name}'].append(value)
                 
                 # Calculate loss
                 batch_loss = self.loss_function(y_batch, y_pred)
@@ -137,6 +169,7 @@ class Network:
                 
                 # Backward pass
                 self.backward(initial_gradient, self.learning_rate)
+
             
             history['loss'].append(epoch_loss)
             
@@ -146,6 +179,11 @@ class Network:
                 y_val_pred = self.forward(X_val)
                 val_loss = self.loss_function(y_val, y_val_pred)
                 history['val_loss'].append(val_loss)
+                batch_metrics = calculate_metrics(y_val, y_val_pred)
+                for metric_name, value in batch_metrics.items():
+                    if f'val_{metric_name}' not in history:
+                        history[f'val_{metric_name}'] = []
+                    history[f'val_{metric_name}'].append(value)
                 
                 if val_loss <= best_val_loss - self.min_delta:
                     best_val_loss = val_loss
@@ -158,9 +196,11 @@ class Network:
                         break
                     
             if (epoch % 10 == 0 or epoch == self.epochs - 1):
-                log_message = f"Epoch {epoch+1}/{self.epochs}, Loss: {epoch_loss:.4f}"
+                accuracy = history['train_accuracy'][-1] if 'train_accuracy' in history else None
+                log_message = f"Epoch {epoch+1}/{self.epochs}, Loss: {epoch_loss:.4f}, Accuracy: {accuracy:.4f}"
                 if val_loss is not None:
-                    log_message += f", Val Loss: {val_loss:.4f}"
+                    accuracy = history['val_accuracy'][-1] if 'val_accuracy' in history else None
+                    log_message += f", Val Loss: {val_loss:.4f}, Val Accuracy: {accuracy:.4f}"
                 print(log_message)
         
         print("Best validation loss:", best_val_loss, "at epoch", history['val_loss'].index(best_val_loss) + 1)
@@ -170,7 +210,7 @@ class Network:
         """Generate predictions for input data X."""
         return self.forward(X)
     
-    def save(self, filepath):
+    def save(self, filepath, history=None):
         """Save the model to a file."""
         import json
         
@@ -206,6 +246,26 @@ class Network:
         
         with open(filepath, 'w') as f:
             json.dump(network_data, f, indent=2)
+        if history:
+            serializable_history = {}
+            num_epochs = len(history['loss'])
+            for epoch in range(num_epochs):
+                serializable_history[str(epoch+1)] = {}
+                
+                for key, values in history.items():
+                    if epoch < len(values):
+                        value = values[epoch]
+                        if isinstance(value, (np.integer, np.int64, np.int32)):
+                            serializable_history[str(epoch+1)][key] = int(value)
+                        elif isinstance(value, (np.floating, np.float64, np.float32)):
+                            serializable_history[str(epoch+1)][key] = float(value)
+                        elif isinstance(value, np.ndarray):
+                            serializable_history[str(epoch+1)][key] = value.tolist()
+                        else:
+                            serializable_history[str(epoch+1)][key] = value
+            
+            with open(filepath + '_history.json', 'w') as f:
+                json.dump(serializable_history, f, indent=2)
     
     @classmethod
     def load(cls, filepath):
