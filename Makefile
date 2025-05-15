@@ -7,8 +7,8 @@ MODELS_DIR = models
 CONFIG_DIR = config
 
 # Default target
-all: prepare-data train predict
-
+all: prepare-data train-all predict-all
+all-default: prepare-data train predict
 all-adam: prepare-data train-adam predict-adam
 all-momentum: prepare-data train-momentum predict-momentum
 all-rmsprop: prepare-data train-rmsprop predict-rmsprop
@@ -55,6 +55,17 @@ train-%:
 		--data-validation $(DATA_DIR)/processed/test_data.csv \
 		--save $(MODELS_DIR)/model_$*.pkl \
 		--verbose
+
+train-all:
+	@echo "Training model with all configurations..."
+	$(VENV)/bin/python src/train.py \
+		--config $(CONFIG_DIR)/network_adam.json \
+		$(CONFIG_DIR)/network_momentum.json \
+		$(CONFIG_DIR)/network_rmsprop.json \
+		$(CONFIG_DIR)/network.json \
+		--data-train $(DATA_DIR)/processed/train_data.csv \
+		--data-validation $(DATA_DIR)/processed/test_data.csv \
+		--save $(MODELS_DIR)/model_all.pkl \
 
 predict:
 	@echo "Predicting with model..."
