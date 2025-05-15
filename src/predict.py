@@ -62,16 +62,10 @@ def binary_cross_entropy(y_true, y_pred, verbose=False):
     """
     import numpy as np
     
-    epsilon = 1e-15
-    y_pred = np.clip(y_pred, epsilon, 1 - epsilon)
+    loss = lambda y_true, y_pred: -np.mean(y_true * np.log(y_pred + 1e-15) + 
+                                                   (1 - y_true) * np.log(1 - y_pred + 1e-15))
     
-    if verbose:
-        print(f"First few examples - y_true: {y_true[:3]}, y_pred: {y_pred[:3]}")
-    
-    N = len(y_true)
-    error = -(1/N) * np.sum(y_true * np.log(y_pred) + (1 - y_true) * np.log(1 - y_pred))
-    
-    return error
+    return loss(y_true, y_pred)
 
 
 def main():
@@ -117,6 +111,9 @@ def main():
         
         print("\n===== Sample Predictions (first 10) =====")
         print(df_results.head(10))
+
+        print("\n===== False Predictions (first 10) =====")
+        print(df_results[~df_results['Correct']].head(10))
         
         output_path = args.data_path.replace(".csv", "_predictions.csv")
         output_path = output_path.replace("processed", "predictions")

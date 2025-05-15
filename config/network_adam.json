@@ -4,7 +4,7 @@
           {
               "type": "input",
               "units": 30,
-              "activation": "relu"
+              "activation": "linear"
           },
           {
               "type": "hidden",
@@ -13,20 +13,10 @@
               "weights_initializer": "xavierUniform"
           },
           {
-                "type": "dropout",
-                "units": 32,
-                "dropout": 0.2
-          },
-          {
               "type": "hidden",
-              "units": 32,
+              "units": 16,
               "activation": "leakyRelu",
               "weights_initializer": "xavierUniform"
-          },
-          {
-                "type": "dropout",
-                "units": 32,
-                "dropout": 0.3
           },
           {
               "type": "output",
@@ -37,7 +27,7 @@
       ]
   },
   "training": {
-      "loss": "binary_crossentropy",
+      "loss": "categoricalCrossentropy",
       "optimizer": "adam",
       "optimizer_params": {
           "learning_rate": 0.001,

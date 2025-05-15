@@ -74,7 +74,7 @@ predict-%:
 # Split and prepare dataset
 prepare-data:
 	@echo "Preparing dataset..."
-	$(VENV)/bin/python src/data_tools/split_dataset.py --dataset_path $(DATA_DIR)/raw/dataset.csv --train_ratio 0.75
+	$(VENV)/bin/python src/data_tools/split_dataset.py --dataset_path $(DATA_DIR)/raw/dataset.csv --train_ratio 0.7
 
 # Visualize data
 visualize:

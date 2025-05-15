@@ -13,20 +13,10 @@
               "weights_initializer": "xavierUniform"
           },
           {
-                "type": "dropout",
-                "units": 32,
-                "dropout": 0.2
-          },
-          {
               "type": "hidden",
               "units": 16,
               "activation": "leakyRelu",
               "weights_initializer": "xavierUniform"
-          },
-          {
-                "type": "dropout",
-                "units": 16,
-                "dropout": 0.3
           },
           {
               "type": "output",
@@ -37,7 +27,7 @@
       ]
   },
   "training": {
-      "loss": "binary_crossentropy",
+      "loss": "categoricalCrossentropy",
       "optimizer": "rmsprop",
       "optimizer_params": {
           "learning_rate": 0.001,
