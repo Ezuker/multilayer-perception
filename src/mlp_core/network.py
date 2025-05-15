@@ -111,6 +111,7 @@ class Network:
         
         best_val_loss = float('inf')
         best_network = None
+        patience_counter = 0
         
         for epoch in range(self.epochs):
             indices = np.random.permutation(n_samples)
@@ -146,9 +147,15 @@ class Network:
                 val_loss = self.loss_function(y_val, y_val_pred)
                 history['val_loss'].append(val_loss)
                 
-                if val_loss <= best_val_loss - 0.001:
+                if val_loss <= best_val_loss - self.min_delta:
                     best_val_loss = val_loss
                     best_network = self.clone()
+                    patience_counter = 0
+                else:
+                    patience_counter += 1
+                    if patience_counter >= self.patience:
+                        print(f"Early stopping at epoch {epoch+1}")
+                        break
                     
             if (epoch % 10 == 0 or epoch == self.epochs - 1):
                 log_message = f"Epoch {epoch+1}/{self.epochs}, Loss: {epoch_loss:.4f}"
