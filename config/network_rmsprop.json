@@ -27,7 +27,7 @@
       ]
   },
   "training": {
-      "loss": "categoricalCrossentropy",
+      "loss": "binary_crossentropy",
       "optimizer": "rmsprop",
       "optimizer_params": {
           "learning_rate": 0.001,
