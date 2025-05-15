@@ -26,6 +26,7 @@ def parse_args():
                         help='Path to save trained model')
     parser.add_argument('--verbose', action='store_true',
                         help='Enable verbose output')
+    
     return parser.parse_args()
 
 
@@ -38,10 +39,8 @@ def plot_training_history(history):
     """
     epochs = range(1, len(history['loss']) + 1)
     
-    # Create figure with two subplots
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 5))
+    _, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 5))
     
-    # Plot training loss
     ax1.plot(epochs, history['loss'], 'b-', label='Training Loss')
     ax1.set_title('Training Loss')
     ax1.set_xlabel('Epochs')
@@ -49,7 +48,6 @@ def plot_training_history(history):
     ax1.grid(True)
     ax1.legend()
     
-    # Plot validation loss if available
     if 'val_loss' in history and history['val_loss']:
         ax2.plot(epochs, history['val_loss'], 'r-', label='Validation Loss')
         ax2.set_title('Validation Loss')
@@ -61,7 +59,6 @@ def plot_training_history(history):
         ax2.text(0.5, 0.5, 'No validation data', 
                  horizontalalignment='center', verticalalignment='center')
     
-    # Improve layout and show plot
     plt.tight_layout()
     plt.savefig('training_history.png')
     plt.show()
@@ -80,7 +77,10 @@ def main():
         if args.verbose:
             print(f"Network architecture:")
             for i, layer in enumerate(layers_config):
-                print(f"  Layer {i}: {layer['type']} - {layer['units']} units, "
+                if layer['type'] == 'dropout':
+                    print(f"  Layer {i}: {layer['type']} - {layer['dropout']} dropout")
+                else:
+                    print(f"  Layer {i}: {layer['type']} - {layer['units']} units, "
                         f"{layer['activation']} activation")
             print(f"Training parameters: {training_config}")
         
@@ -93,14 +93,14 @@ def main():
         
         x_train, y_train, x_val, y_val = ProcessData.get_data(args.data_train, args.data_validation)
         
-        num_training_runs = 5
+        num_training_runs = 1
         accumulated_history = {'loss': [], 'val_loss': []}
         
         print(f"Starting training for {num_training_runs} runs of {network.epochs} epochs each...")
         
         for run in range(num_training_runs):
             print(f"--- Starting Training Run {run + 1}/{num_training_runs} ---")
-            history = network.fit(x_train, y_train, (x_val, y_val)) 
+            history, best_network = network.fit(x_train, y_train, (x_val, y_val))
             
             accumulated_history['loss'].extend(history['loss'])
             if 'val_loss' in history and history['val_loss']:
@@ -110,7 +110,7 @@ def main():
         print("Plotting accumulated training history...")
         plot_training_history(accumulated_history)
         print("Saving model...")
-        network.save(args.save)
+        best_network.save(f"{args.save}")
 
     except Exception as e:
         print(f"Error: {e}")
