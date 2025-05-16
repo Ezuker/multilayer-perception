@@ -103,6 +103,24 @@ This project serves both as a practical introduction to core neural network conc
 - Print predictions to the console or save them to a file.
 
 
+### 4. Bonuses
+
+**4.1. Add optimizers**
+- Add few optimizers such as Adam, RMSProp, Momentum
+
+**4.2. Display multiple learning curves**
+- The program can parse and train multiple models at once and display a graph that compare them
+
+**4.3. History of metrics**
+- Do a history of metrics that can be saved in .json file
+
+**4.4. Implementation of early stop**
+- Implement an early stop that is configurable inside network in the config
+
+**4.5. Evaluate the learning phase with multiple metrics**
+- Add few more metrics such as F1 score, recall, precision, and accuracies
+
+
 ## Development Workflow
 
 This workflow is designed not only to ensure clean, incremental development, but also to help you build strong habits that mirror professional practices.
@@ -170,29 +188,27 @@ mlp-project/
 │
 ├── src/
 │   ├── data_tools/
+│   │   ├── process_data_train.py
 │   │   ├── split_dataset.py
 │   │   └── visualizer.py
 │   │
 │   ├── mlp_core/
 │   │   ├── __init__.py
+│   │   ├── perceptron.py
 │   │   ├── network.py
-│   │   ├── layers.py
-│   │   ├── utils.py
+│   │   ├── layer.py
+│   │   ├── optimizers.py \(if done with bonus\)
 │   │   └── parser.py
-│   ├── train_mlp.py
+│   ├── train.py
 │   └── predict.py
 │
 ├── config/
-│   └── architecture.txt
-│
-├── tests/
-│   ├── test_network.py
-│   ├── test_layers.py
-│   └── test_utils.py
+│   └── architecture.json
 │
 ├── specs.md
 ├── README.md
 ├── requirements.txt
+├── Makefile
 └── .gitignore
 ```
 
