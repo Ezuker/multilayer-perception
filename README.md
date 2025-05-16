@@ -10,61 +10,162 @@ This project aims to build a **Multilayer Perceptron (MLP)** neural network from
 
 - **MLP Model**:
   - Build a **Multilayer Perceptron** with configurable layers and activation functions.
-  - Train the model using **gradient descent** and **backpropagation**.
+  - Train the model using different optimizers: default, Adam, Momentum, and RMSprop.
 
 - **Prediction**:
-  - Use the trained model to make predictions on new data.
+  - Use the trained models to make predictions on new data.
 
 ## Installation
 
 1. **Clone the repository**:
-	```bash
-	git clone link && cd multilayer-perceptron
-	```
+   ```bash
+   git clone <repository_url> && cd multilayer-perception
+   ```
 
-2. **Install dependencies**
-	```bash
-	pip install -r requirements.txt
-	```
+2. **Setup the environment**:
+   ```bash
+   make setup
+   ```
+   This will:
+   - Create a Python virtual environment
+   - Install dependencies from requirements.txt
+   - Create necessary directories for data and models
 
-3. **Setup the database**
-	- Place your raw dataset into the data/raw/ directory.
-	- Run split_dataset.py to process and split the data into data/processed/.
+3. **Prepare dataset**:
+   - Place your raw dataset as `dataset.csv` in the `data/raw/` directory
+   - Run the data preparation:
+   ```bash
+   make prepare-data
+   ```
 
-# Usage
-1. **Data Splitting & Visualization**:
-To shuffle, split the dataset, and visualize the data, run the following command:
+## Usage
+
+### Training Models
+
+You can train models with different optimization algorithms:
+
+1. **Train with default configuration**:
+   ```bash
+   make train
+   ```
+
+2. **Train with specific optimizer**:
+   ```bash
+   # For Adam optimizer
+   make train-adam
+   
+   # For Momentum optimizer
+   make train-momentum
+   
+   # For RMSprop optimizer
+   make train-rmsprop
+   ```
+
+3. **Train with all optimizers**:
+   ```bash
+   make train-all
+   ```
+
+### Making Predictions
+
+After training, you can use the models to make predictions:
+
+1. **Predict with default model**:
+   ```bash
+   make predict
+   ```
+
+2. **Predict with specific model**:
+   ```bash
+   # For Adam model
+   make predict-adam
+   
+   # For Momentum model
+   make predict-momentum
+   
+   # For RMSprop model
+   make predict-rmsprop
+   ```
+
+3. **Predict with all models**:
+   ```bash
+   make predict-all
+   ```
+
+### Complete Workflows
+
+Run the entire process (prepare data, train, and predict) with:
+
 ```bash
-python src/data_tools/split_dataset.py
+# Using default configuration
+make all-default
+
+# Using Adam optimizer
+make all-adam
+
+# Using Momentum optimizer
+make all-momentum
+
+# Using RMSprop optimizer
+make all-rmsprop
+
+# Using all configurations
+make all
 ```
 
-This script will:
-- Shuffle the dataset randomly.
-- Split it into training and validation sets.
-- Visualize the data distribution to help you understand the relationships in your dataset.
+### Data Visualization
 
-2. **Train the Model**:
-To train the MLP model, run:
+To generate visualizations of your dataset:
 
 ```bash
-python src/scripts/train_mlp.py
-```
-- The model architecture is defined in config/architecture.txt.
-- The trained model's weights will be saved to models/model_weights.json.
-
-3. **Make Predictions**:
-Once the model is trained, use the following command to make predictions:
-
-```bash
-python src/scripts/predict.py
+make visualize
 ```
 
-This script will load the saved model weights and generate predictions based on the input data.
+### Cleanup
 
-# Testing
+1. **Regular cleanup** (remove cached files and artifacts):
+   ```bash
+   make clean
+   ```
 
-You can run unit tests to ensure that your model and other modules are working correctly:
+2. **Deep cleanup** (remove virtual environment and all generated files):
+   ```bash
+   make deep-clean
+   ```
+
+### Help
+
+For a full list of available commands:
 
 ```bash
-pytest tests/
+make help
+```
+
+## Project Structure
+
+```
+├── Makefile           # Build automation
+├── config/            # Configuration files for different optimizers
+│   ├── network.json
+│   ├── network_adam.json
+│   ├── network_momentum.json
+│   └── network_rmsprop.json
+├── data/              # Data storage
+│   ├── processed/     # Processed datasets
+│   └── raw/           # Raw input dataset
+├── models/            # Trained models
+└── src/               # Source code
+    ├── data_tools/    # Data processing and visualization tools
+    │   ├── process_data_train.py
+    │   ├── split_dataset.py
+    │   └── visualizer.py
+    ├── mlp_core/      # Core MLP implementation
+    │   ├── dropout.py
+    │   ├── layer.py
+    │   ├── network.py
+    │   ├── optimizers.py
+    │   ├── parser.py
+    │   └── perceptron.py
+    ├── predict.py     # Prediction script
+    └── train.py       # Training script
 ```
