@@ -1,109 +1,110 @@
 #!/usr/bin/env python3
 # filepath: /home/bcarolle/multilayer-perception/src/train.py
 
-import argparse
 import os
 import sys
-import matplotlib.pyplot as plt
-import numpy as np
-
-# Add parent directory to path to allow imports from mlp_core
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from mlp_core.parser import ConfigParser
 from mlp_core.network import Network
 from data_tools.process_data_train import ProcessData
 
 def parse_args():
     """Parse command-line arguments."""
+    import argparse
+
     parser = argparse.ArgumentParser(description='Multilayer Perceptron Neural Network')
-    parser.add_argument('--config', type=str, default='config/network.json',
+    parser.add_argument('--config', type=str, nargs='+', default='config/network.json',
                         help='Path to network configuration file')
     parser.add_argument('--data-train', type=str, required=True,
                         help='Path to training train data file')
     parser.add_argument('--data-validation', type=str, required=True,
                         help='Path to training validation data file')
-    parser.add_argument('--save', type=str, default='models/model.pkl',
-                        help='Path to save trained model')
     parser.add_argument('--verbose', action='store_true',
                         help='Enable verbose output')
     
     return parser.parse_args()
 
 
-def plot_training_history(history):
-    """
-    Plot training and validation loss from a training history dictionary.
+def plot_training_history(networks):
+    """Plot training and validation loss for multiple networks."""
+    import matplotlib.pyplot as plt
+    import numpy as np
+
+    nb_networks = len(networks)
+    n_cols = min(nb_networks, 2)
+    n_rows = (nb_networks + n_cols - 1) // n_cols
     
-    Args:
-        history: Dictionary containing 'loss' and 'val_loss' lists
-    """
-    epochs = range(1, len(history['loss']) + 1)
+    fig, axes = plt.subplots(n_rows, n_cols, figsize=(16, 4 * n_rows))
+    axes = np.array(axes).reshape(-1) if nb_networks > 1 else [axes]
     
-    _, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 5))
+    for i, (_, history) in enumerate(networks):
+        if i < len(axes):
+            ax = axes[i]
+            if 'loss' in history:
+                ax.plot(history['loss'], 'b-', label='Train')
+            if 'val_loss' in history:
+                ax.plot(history['val_loss'], 'r-', label='Val')
+            ax.set_title(networks[i][0].name)
+            ax.legend()
     
-    ax1.plot(epochs, history['loss'], 'b-', label='Training Loss')
-    ax1.set_title('Training Loss')
-    ax1.set_xlabel('Epochs')
-    ax1.set_ylabel('Loss')
-    ax1.grid(True)
-    ax1.legend()
-    
-    if 'val_loss' in history and history['val_loss']:
-        ax2.plot(epochs, history['val_loss'], 'r-', label='Validation Loss')
-        ax2.set_title('Validation Loss')
-        ax2.set_xlabel('Epochs')
-        ax2.set_ylabel('Loss')
-        ax2.grid(True)
-        ax2.legend()
-    else:
-        ax2.text(0.5, 0.5, 'No validation data', 
-                 horizontalalignment='center', verticalalignment='center')
+    # Cacher les axes inutilisés
+    for i in range(nb_networks, len(axes)):
+        axes[i].axis('off')
     
     plt.tight_layout()
-    plt.savefig('training_history.png')
+    plt.savefig('training_comparison.png')
     plt.show()
 
 
 def main():
     """Main function."""
-    args = parse_args()
-    
-    if args.verbose:
-        print(f"Loading configuration from: {args.config}")
-    
     try:
-        layers_config, training_config = ConfigParser.parse_config(args.config)
-        
-        if args.verbose:
-            print(f"Network architecture:")
-            for i, layer in enumerate(layers_config):
-                if layer['type'] == 'dropout':
-                    print(f"  Layer {i}: {layer['type']} - {layer['dropout']} dropout")
-                else:
-                    print(f"  Layer {i}: {layer['type']} - {layer['units']} units, "
-                        f"{layer['activation']} activation")
-            print(f"Training parameters: {training_config}")
-        
-        network = Network(layers_config, training_config)
-        print("Network initialized successfully!")
-        if args.verbose:
-            print(f"Network architecture: {network}")
-            print(f"Ready to train using data from: {args.data_train}")
-            print(f"Model will be saved to: {args.save}")
-        
-        x_train, y_train, x_val, y_val = ProcessData.get_data(args.data_train, args.data_validation)
-        
-        accumulated_history = {'loss': [], 'val_loss': []}
-        history, best_network = network.fit(x_train, y_train, (x_val, y_val))
-        
-        accumulated_history['loss'].extend(history['loss'])
-        if 'val_loss' in history and history['val_loss']:
-                accumulated_history['val_loss'].extend(history['val_loss'])
+        import pathlib
 
-        print("Plotting accumulated training history...")
-        plot_training_history(accumulated_history)
-        print("Saving model...")
-        best_network.save(f"{args.save}", history)
+        args = parse_args()
+        if args.verbose:
+            print(f"Loading configuration from: {args.config}")
+        networks = []
+        for model in args.config:
+            layers_config, training_config = ConfigParser.parse_config(model)
+            
+            if args.verbose:
+                print(f"Network architecture:")
+                for i, layer in enumerate(layers_config):
+                    if layer['type'] == 'dropout':
+                        print(f"  Layer {i}: {layer['type']} - {layer['dropout']} dropout")
+                    else:
+                        print(f"  Layer {i}: {layer['type']} - {layer['units']} units, "
+                            f"{layer['activation']} activation")
+                print(f"Training parameters: {training_config}")
+            
+            network = Network(layers_config, training_config)
+            print("Network initialized successfully!")
+            if args.verbose:
+                print(f"Network architecture: {network}")
+                print(f"Ready to train using data from: {args.data_train}")
+            
+            x_train, y_train, x_val, y_val = ProcessData.get_data(args.data_train, args.data_validation)
+            
+            accumulated_history = {'loss': [], 'val_loss': []}
+            history, best_network = network.fit(x_train, y_train, (x_val, y_val))
+            
+            accumulated_history['loss'].extend(history['loss'])
+            if 'val_loss' in history and history['val_loss']:
+                    accumulated_history['val_loss'].extend(history['val_loss'])
+
+            print("Plotting accumulated training history...")
+            print("Saving model...")
+            
+            model_dir = pathlib.Path("models")
+            model_dir.mkdir(parents=True, exist_ok=True)
+            model = pathlib.Path(model).name
+            best_network.save(os.path.join(model_dir, model), history)
+            best_network.name = model
+            networks.append((best_network, history))
+        plot_training_history(networks)
+        
 
     except Exception as e:
         print(f"Error: {e}")

@@ -36,6 +36,8 @@
           "epsilon": 1e-8
       },
       "batch_size": 32,
-      "epochs": 200
+      "epochs": 200,
+      "patience": 30,
+      "min_delta": 0.0001
   }
 }
