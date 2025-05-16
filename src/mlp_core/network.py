@@ -213,6 +213,8 @@ class Network:
     def save(self, filepath, history=None):
         """Save the model to a file."""
         import json
+        import pathlib
+        import os
         
         layers_data = []
         for layer in self.layers:
@@ -263,8 +265,12 @@ class Network:
                             serializable_history[str(epoch+1)][key] = value.tolist()
                         else:
                             serializable_history[str(epoch+1)][key] = value
-            
-            with open(filepath + '_history.json', 'w') as f:
+
+            dir_name = pathlib.Path("history")
+            dir_name.mkdir(parents=True, exist_ok=True)
+            filepath = pathlib.Path(filepath).name
+            filepath = os.path.join(dir_name, filepath)
+            with open(filepath, 'w') as f:
                 json.dump(serializable_history, f, indent=2)
     
     @classmethod

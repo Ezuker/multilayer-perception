@@ -1,20 +1,18 @@
 #!/usr/bin/env python3
 # filepath: /home/bcarolle/multilayer-perception/src/train.py
 
-import argparse
 import os
 import sys
-import matplotlib.pyplot as plt
-import numpy as np
-
-# Add parent directory to path to allow imports from mlp_core
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from mlp_core.parser import ConfigParser
 from mlp_core.network import Network
 from data_tools.process_data_train import ProcessData
 
 def parse_args():
     """Parse command-line arguments."""
+    import argparse
+
     parser = argparse.ArgumentParser(description='Multilayer Perceptron Neural Network')
     parser.add_argument('--config', type=str, nargs='+', default='config/network.json',
                         help='Path to network configuration file')
@@ -22,8 +20,6 @@ def parse_args():
                         help='Path to training train data file')
     parser.add_argument('--data-validation', type=str, required=True,
                         help='Path to training validation data file')
-    parser.add_argument('--save', type=str, default='models/model.pkl',
-                        help='Path to save trained model')
     parser.add_argument('--verbose', action='store_true',
                         help='Enable verbose output')
     
@@ -32,6 +28,9 @@ def parse_args():
 
 def plot_training_history(networks):
     """Plot training and validation loss for multiple networks."""
+    import matplotlib.pyplot as plt
+    import numpy as np
+
     nb_networks = len(networks)
     n_cols = len(networks)  # Max 4 colonnes
     n_rows = (nb_networks + n_cols - 1) // n_cols
@@ -60,12 +59,12 @@ def plot_training_history(networks):
 
 def main():
     """Main function."""
-    args = parse_args()
-    
-    if args.verbose:
-        print(f"Loading configuration from: {args.config}")
-    
     try:
+        import pathlib
+
+        args = parse_args()
+        if args.verbose:
+            print(f"Loading configuration from: {args.config}")
         networks = []
         for model in args.config:
             layers_config, training_config = ConfigParser.parse_config(model)
@@ -85,7 +84,6 @@ def main():
             if args.verbose:
                 print(f"Network architecture: {network}")
                 print(f"Ready to train using data from: {args.data_train}")
-                print(f"Model will be saved to: {args.save}")
             
             x_train, y_train, x_val, y_val = ProcessData.get_data(args.data_train, args.data_validation)
             
@@ -98,7 +96,11 @@ def main():
 
             print("Plotting accumulated training history...")
             print("Saving model...")
-            best_network.save(f"{model}", history)
+            
+            model_dir = pathlib.Path("models")
+            model_dir.mkdir(parents=True, exist_ok=True)
+            model = pathlib.Path(model).name
+            best_network.save(os.path.join(model_dir, model), history)
             best_network.name = model
             networks.append((best_network, history))
         plot_training_history(networks)
