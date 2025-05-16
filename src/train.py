@@ -32,7 +32,7 @@ def plot_training_history(networks):
     import numpy as np
 
     nb_networks = len(networks)
-    n_cols = len(networks)  # Max 4 colonnes
+    n_cols = min(nb_networks, 2)
     n_rows = (nb_networks + n_cols - 1) // n_cols
     
     fig, axes = plt.subplots(n_rows, n_cols, figsize=(16, 4 * n_rows))

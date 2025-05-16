@@ -34,6 +34,7 @@ deep-clean: clean
 	@echo "Performing deep clean..."
 	rm -rf $(VENV)
 	rm -rf $(MODELS_DIR)/*
+	rm -rf history/*
 	@echo "Deep clean complete."
 
 # Train the model with default configuration
@@ -99,24 +100,22 @@ prepare-data:
 # Visualize data
 visualize:
 	@echo "Generating data visualizations..."
-	$(VENV)/bin/python src/data_tools/visualize_data.py
-
-# Run tests
-test:
-	@echo "Running tests..."
-	$(VENV)/bin/pytest tests/
+	$(VENV)/bin/python src/data_tools/split_dataset.py --dataset_path $(DATA_DIR)/raw/dataset.csv --train_ratio 0.7 --visualize
 
 # Show help message
 help:
 	@echo "Multilayer Perceptron (MLP) Makefile"
 	@echo "Available targets:"
-	@echo "  all          : Setup environment and train model (default)"
-	@echo "  setup        : Create virtual environment and install dependencies"
-	@echo "  clean        : Remove cached files and artifacts"
-	@echo "  deep-clean   : Remove virtual environment and all generated files"
-	@echo "  train        : Train model with default configuration"
-	@echo "  train-<name> : Train model with <name>.json configuration"
-	@echo "  prepare-data : Process and split raw dataset"
-	@echo "  visualize    : Generate data visualizations"
-	@echo "  test         : Run tests"
-	@echo "  help         : Show this help message"
+	@echo "  all            : Setup environment and train model (default)"
+	@echo "  setup          : Create virtual environment and install dependencies"
+	@echo "  clean          : Remove cached files and artifacts"
+	@echo "  deep-clean     : Remove virtual environment and all generated files"
+	@echo "  train          : Train model with default configuration"
+	@echo "  train-<name>   : Train model with <name>.json configuration"
+	@echo "  train-all      : Train model with all configurations"
+	@echo "  predict        : Predict with model"
+	@echo "  predict-<name> : Predict with <name>.json model"
+	@echo "  predict-all    : Predict with all models"
+	@echo "  prepare-data   : Process and split raw dataset"
+	@echo "  visualize      : Generate data visualizations"
+	@echo "  help           : Show this help message"

@@ -1,7 +1,6 @@
 from .layer import Layer
 from .dropout import Dropout
 import numpy as np
-from tqdm import tqdm
 from .optimizers import get_optimizer
 
 class Network:
