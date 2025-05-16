@@ -197,7 +197,7 @@ mlp-project/
 │   │   ├── perceptron.py
 │   │   ├── network.py
 │   │   ├── layer.py
-│   │   ├── optimizers.py \(if done with bonus\)
+│   │   ├── optimizers.py (if done with bonus)
 │   │   └── parser.py
 │   ├── train.py
 │   └── predict.py
