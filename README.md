@@ -31,12 +31,23 @@ This project aims to build a **Multilayer Perceptron (MLP)** neural network from
    - Install dependencies from requirements.txt
    - Create necessary directories for data and models
 
+   Next, **activate the virtual environment** (run this in your terminal):
+   ```bash
+   source venv/bin/activate
+   ```
+
 3. **Prepare dataset**:
-   - Place your raw dataset as `dataset.csv` in the `data/raw/` directory
-   - Run the data preparation:
+   - Place your raw dataset as `dataset.csv` in the `data/raw/` directory.
+
+   If your file is named `dataset.csv`, run:
    ```bash
    make prepare-data
    ```
+   If your file has a different name or location, run:
+   ```bash
+   make prepare-data DATASET=path/to/your/dataset.csv
+   ```
+   (The `DATASET` variable lets you specify a custom dataset path.)
 
 ## Usage
 
@@ -117,9 +128,15 @@ make all
 
 To generate visualizations of your dataset:
 
+If your file is named `dataset.csv` in the default location, run:
 ```bash
 make visualize
 ```
+If your file has a different name or location, run:
+```bash
+make visualize DATASET=path/to/your/dataset.csv
+```
+(The `DATASET` variable lets you specify a custom dataset path.)
 
 ### Cleanup
 

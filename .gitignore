@@ -2,3 +2,7 @@ venv
 models
 data
 history
+.gitignore
+**/__pycache__
+pyvenv.cfg
+training_comparaison.png

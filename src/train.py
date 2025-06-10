@@ -53,7 +53,7 @@ def plot_training_history(networks):
         axes[i].axis('off')
     
     plt.tight_layout()
-    plt.savefig('training_comparison.png')
+    plt.savefig('training_comparaison.png')
     plt.show()
 
 

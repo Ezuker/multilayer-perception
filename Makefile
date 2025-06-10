@@ -5,6 +5,7 @@ VENV = venv
 DATA_DIR = data
 MODELS_DIR = models
 CONFIG_DIR = config
+DATASET ?= $(DATA_DIR)/raw/dataset.csv
 
 # Default target
 all: prepare-data train-all predict-all
@@ -20,6 +21,8 @@ setup:
 	@echo "Installing dependencies..."
 	$(VENV)/bin/pip install -r requirements.txt
 	@mkdir -p $(DATA_DIR)/raw $(DATA_DIR)/processed $(MODELS_DIR)
+	@echo "Setup complete. Virtual environment created at $(VENV) and dependencies installed."
+	@echo "To activate the virtual environment, run: source $(VENV)/bin/activate"
 
 # Clean build artifacts and temporary files
 clean:
@@ -95,12 +98,18 @@ predict-all:
 # Split and prepare dataset
 prepare-data:
 	@echo "Preparing dataset..."
-	$(VENV)/bin/python src/data_tools/split_dataset.py --dataset_path $(DATA_DIR)/raw/dataset.csv --train_ratio 0.7
+	@if [ $(DATASET) = "$(DATA_DIR)/raw/dataset.csv" ]; then \
+		echo "No dataset specified. Using default dataset."; \
+	fi
+	@$(VENV)/bin/python src/data_tools/split_dataset.py --dataset_path $(DATASET) --train_ratio 0.7
 
 # Visualize data
 visualize:
 	@echo "Generating data visualizations..."
-	$(VENV)/bin/python src/data_tools/split_dataset.py --dataset_path $(DATA_DIR)/raw/dataset.csv --train_ratio 0.7 --visualize
+	@if [ $(DATASET) = "$(DATA_DIR)/raw/dataset.csv" ]; then \
+		echo "No dataset specified. Using default dataset."; \
+	fi
+	@$(VENV)/bin/python src/data_tools/split_dataset.py --dataset_path $(DATASET) --train_ratio 0.7 --visualize
 
 # Show help message
 help:
